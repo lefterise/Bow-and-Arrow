@@ -883,8 +883,9 @@ function initLevels(){
 	var slimeCollisionRect = new CollisionRect(0,44,0,49);
 	var fireballCollisionRect = new CollisionRect(0,60,0,20);
 	var vultureCollisionRect = new CollisionRect(0,54,34,52);
-	
+	var shurikenCollisionRect  = new CollisionRect(0,30,0,32);
 	levels = [];
+	
 	levels.push(new ScrollLevel(sprites[32], "Target Practice\n\nOur journey begins on the target range.  Target launchers release balloons up range for the archers to shoot.  Your task -\nShoot all of the balloons."));
 	levels.push(new BaloonLevel(sprites[6], sprites[8], archer, arrowManager));
 	levels.push(new ScrollLevel(sprites[32], "More Target Practice\n\nNice shooting!\n\nThe only way to become a great archer is to practice.  After all, practice makes perfect.  Now it gets a little tougher.\nOnly shoot the RED balloons."));
@@ -899,8 +900,10 @@ function initLevels(){
 	levels.push(new SpawnableEnemyLevel([sprites[18], sprites[19]], [sprites[20]], fireballCollisionRect, 100, 1500, 2, archerWithDestructableArrows, destructableArrowManager));	
 	levels.push(new ScrollLevel(sprites[32], "Unfriendly Skies\n\nThinking those rocks may have been meant for you, you decide to send a message to your friend Khanin the Wizard.  A passing dove agrees to deliver your message.  Just then the skies went BLACK... "));
 	levels.push(new SpawnableEnemyLevel([sprites[21], sprites[22]], [sprites[23]], vultureCollisionRect, 300, 1800, 1, archerWithDestructableArrows, destructableArrowManager));	
+	levels.push(new ScrollLevel(sprites[32], "Whrrrrrrrrrr\n\nThe Black Archer is definitely on to you.  His servants are everywhere and will stop at nothing in an effort terminate your existence.  From beyond sight, you here a strange whirring noise... "));	
+	levels.push(new SpawnableEnemyLevel([sprites[33], sprites[34]], [sprites[35]], shurikenCollisionRect, 100, 1500, 2, archerWithDestructableArrows, destructableArrowManager));	
+	levels.push(new ScrollLevel(sprites[32], "Bow and Arrow\n\nversion 1.0 Abridged\nApril 1992 John Di Troia"));
 	
-	//levels.push(new ScrollLevel(sprites[32], "Whrrrrrrrrrr\n\nThe Black Archer is definitely on to you.  His servants are everywhere and will stop at nothing in an effort terminate your existence.  From beyond sight, you here a strange whirring noise... "));
 }
 
 function start(){	
