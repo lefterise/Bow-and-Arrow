@@ -1,0 +1,974 @@
+<html>
+<head>
+<script>
+
+class CollisionRect{
+	constructor(left, right, top, bottom){
+		this.left = left;
+		this.right = right;
+		this.top = top;
+		this.bottom = bottom;
+	}
+}
+
+const ArcherState = {
+  Idle: 0,
+  Loaded: 1,
+  Arming: 2,
+  Armed: 3,  
+};
+
+class Archer{
+
+	constructor(fireFunc, archerSprites){
+		this.collisionRect = new CollisionRect(13, 95, 23, 122);
+		this.y = 0;
+		this.x = 10;
+		this.state = ArcherState.Idle;
+		this.sprite = archerSprites.Idle;
+		this.pullAnimationStartTime = 0;
+		this.fire = fireFunc;
+		this.sprites = archerSprites;
+    }
+	
+	move(y){
+		this.y = y-70;
+	}
+
+	load(){
+		if (this.state == ArcherState.Idle){
+			this.state = ArcherState.Loaded;
+			this.sprite = this.sprites.Loaded;
+		}		
+	}
+	
+	pull(){
+		if (this.state == ArcherState.Loaded){
+			this.pullAnimationStartTime = -1;
+			this.state = ArcherState.Arming;
+			this.sprite = this.sprites.Arming;
+		}		
+	}	
+
+	release(){
+		if (this.state == ArcherState.Arming || this.state == ArcherState.Armed){
+			this.state = ArcherState.Idle;
+			this.sprite = this.sprites.Idle;
+			this.fire(this.y + 59);
+		}		
+	}
+	
+	update(time){
+		if (this.state == ArcherState.Arming){
+			if (this.pullAnimationStartTime == -1){
+				this.pullAnimationStartTime = time;
+			}
+			var elapsedTimeInMs = time - this.pullAnimationStartTime;
+			
+			if (elapsedTimeInMs > 60){
+				this.state == ArcherState.Armed;
+				this.sprite = this.sprites.Armed;				
+			}			
+		}		
+	}
+	
+	draw(ctx){
+		ctx.drawImage(this.sprite, this.x, this.y);
+	}
+	
+	collidesWith(left,right,top,bottom){
+		return this.x + this.collisionRect.left < right
+			&& this.x + this.collisionRect.right > left
+			&& this.y + this.collisionRect.top <=bottom
+			&& this.y + this.collisionRect.bottom >= top;
+			
+			 
+			
+	}
+}
+
+class Arrow{
+	constructor(y, arrowSprite, destroyOnCollision){
+		this.y = y;
+		this.x = 51;
+		this.prevX = 51;
+		this.animationStartTime = -1;
+		this.arrowSprite = arrowSprite;
+		this.isAlive = true;
+		this.destroyOnCollision = destroyOnCollision;
+	}
+	
+	update(time){
+		if (this.isAlive){
+			if (this.animationStartTime == -1){
+				this.animationStartTime = time;
+			}
+			var elapsedTimeMs = time - this.animationStartTime;
+			var pixelsPerMs = 640 / 2000;
+			this.prevX = this.x;
+			this.x = 51 + elapsedTimeMs * pixelsPerMs;
+			if (this.x > 640) {
+				this.isAlive = false;
+			}
+		}
+	}
+	
+	draw(ctx){	
+		ctx.drawImage(this.arrowSprite, this.x, this.y);
+	}
+	
+	collidesWith(left,right,top,bottom){
+		let tipX = this.x + 60;
+		let prevTipX = this.prevX + 60;
+		let collided = (this.y + 2 >= top && this.y +2 <= bottom && prevTipX <= right && tipX >= left);
+		
+		if(collided && this.destroyOnCollision){
+			this.isAlive = false;
+		}
+		return collided;
+	}
+}
+
+class ArrowManager{
+	constructor(arrowSprite, destroyArrowOnCollision){	
+		this.arrows = [];
+		this.arrowSprite = arrowSprite;
+		this.destroyArrowOnCollision = destroyArrowOnCollision;
+	}
+	
+	createArrow(y){
+		var arrow = new Arrow(y, this.arrowSprite, this.destroyArrowOnCollision);
+		this.arrows.push(arrow);
+	}
+	
+	update(time){
+		for (let arrow of this.arrows){
+			arrow.update(time);		
+		}
+	
+		this.arrows = this.arrows.filter((arrow) =>arrow.isAlive);
+	}
+	
+	draw(ctx){
+		for (let arrow of this.arrows){
+			arrow.draw(ctx);
+		}
+	}
+	
+	collidesWith(l, r, t, b){
+		return this.arrows.reduce((accumulator, arrow) => accumulator || arrow.collidesWith(l, r, t, b), false);
+	}
+	
+	getCollidingArrow(l, r, t, b){
+		for (let arrow of this.arrows){
+			if (arrow.collidesWith(l, r, t, b)){
+				return arrow;
+			}
+		}
+		return null;
+	}
+}
+
+const BaloonState = {
+  Flying: 0,
+  Poped: 1,
+  Dead: 2,
+};
+
+class Baloon{
+	constructor(x, y, risePixelsPerMs, baloonSprite, poppedBaloonSprite, type){
+		this.x = x;
+		this.y = y;
+		this.risePixelsPerMs = risePixelsPerMs;
+		this.previousUpdateTime = -1;
+		this.state = BaloonState.Flying;
+		this.baloonSprite = baloonSprite;
+		this.poppedBaloonSprite = poppedBaloonSprite;
+		this.type = type;
+	}
+	
+	checkCollisions(arrowManager){
+		if (this.state == BaloonState.Flying && arrowManager.collidesWith(this.x, this.x + 24, this.y + 6, this.y + 30)){
+			this.state = BaloonState.Poped;
+			this.previousUpdateTime = -1;
+		}	
+	}
+	
+	update(time){
+		if (this.state == BaloonState.Flying){
+			if (this.previousUpdateTime == -1){
+				this.previousUpdateTime = time;
+			}
+			var timeSincePrevUpdateMs = time - this.previousUpdateTime;
+			this.previousUpdateTime = time;			
+			this.y = this.y - timeSincePrevUpdateMs * this.risePixelsPerMs;
+			if (this.y < -50) {
+				this.y = 480;
+			}
+		}
+		if (this.state == BaloonState.Poped){
+			if (this.previousUpdateTime == -1){
+			    this.previousUpdateTime = time;
+			}
+			var timeSincePrevUpdateMs = time - this.previousUpdateTime;
+			this.previousUpdateTime = time;
+			var pixelsPerMs = 480 / 3000;
+			this.y = this.y + timeSincePrevUpdateMs * pixelsPerMs;
+			if (this.y > 480){
+				this.state = BaloonState.Dead;
+			}
+		}
+	}
+	
+	draw(ctx){
+		ctx.drawImage(this.state == BaloonState.Flying ? this.baloonSprite : this.poppedBaloonSprite, this.x, this.y);
+	}
+}
+
+class BaloonLevel{
+	constructor(baloonSprite, poppedBaloonSprite, archer, arrowManager){	
+		this.archer = archer;
+		this.arrowManager = arrowManager;
+		this.baloons = [];
+		for (let i = 0; i < 15; ++i){
+			this.baloons.push(new Baloon(250 + i * 26, 480, 480 / 5000, baloonSprite, poppedBaloonSprite))
+		}
+	}
+	
+	update(time){
+		this.archer.update(time);		
+		this.arrowManager.update(time);
+		
+		for (let baloon of this.baloons){
+			baloon.update(time);
+			baloon.checkCollisions(this.arrowManager);
+		}
+	
+		this.baloons = this.baloons.filter((baloon) => baloon.state != BaloonState.Dead);
+	}
+	
+	
+	draw(ctx){
+		for (let baloon of this.baloons){
+			baloon.draw(ctx);
+		}
+		this.archer.draw(ctx);
+		this.arrowManager.draw(ctx);	
+	}
+	
+	isComplete(){
+		return this.baloons.length == 0;
+	}
+	
+	isLost(){
+		return false;
+	}
+	
+	mousemove(x, y){
+		this.archer.move(y);		
+	}
+	
+	mousedown(button){
+		if (button == 0){
+			this.archer.pull();
+		} else if (button == 2){
+			this.archer.load();
+		}
+	}
+	
+	mouseup(button){
+		if (button == 0){
+			this.archer.release();
+		}		
+	}	
+}
+
+function wrapText(context, text, x, y, maxWidth,lineHeight){
+	var line = '';
+	var word = '';
+	
+	for(let c of text){
+		if (c == ' ' || c == '\n'){
+			var testLine = line + word;
+			var metrics = context.measureText(testLine);
+			var testWidth = metrics.width;
+			if (testWidth > maxWidth){
+			    var offsetX = (maxWidth - context.measureText(line).width) / 2;
+				context.fillText(line, x + offsetX, y);
+				line = word + ' ';
+				y += lineHeight;
+			} else if (c == '\n'){
+				var offsetX = (maxWidth - testWidth)/2
+				context.fillText(testLine, x + offsetX, y);
+				line = '';
+				y += lineHeight;
+			}else{
+				line += word + ' ';
+			}
+			word = '';
+		}else{
+			word += c;
+		}		
+	}
+	var offsetX = (maxWidth - context.measureText(line + word).width) / 2;
+	context.fillText(line + word, x + offsetX, y);
+}
+
+class ScrollLevel{
+	constructor(scrollSprite, message){	
+		this.scrollSprite = scrollSprite;
+		this.message = message;
+		this.complete = false;
+	}
+	
+	update(time){
+	}
+	
+	
+	draw(ctx){
+		ctx.drawImage(this.scrollSprite, 174, 129);
+		ctx.font = '16px serif';
+		wrapText(ctx, this.message, 174 + 36, 129 + 38, 291 - 72, 18);
+		
+	}
+	
+	isComplete(){
+		return this.complete;
+	}
+	
+	isLost(){
+		return false;
+	}
+	
+	mousemove(x, y){}
+	
+	mousedown(button){}
+	
+	mouseup(button){
+		if (button == 0){
+			this.complete = true;
+		}		
+	}
+}
+
+const BaloonType = {
+  Red: 0,
+  Yellow: 1,
+};
+
+class YellowBaloonLevel{
+	constructor(redbaloonSprite, poppedRedBaloonSprite, yellowBaloonSprite, poppedYellowBaloonSprite, archer, arrowManager){	
+		this.arrowManager = arrowManager;
+		this.archer = archer;
+		this.baloons = [];
+		for (let i = 0; i < 15; ++i){
+			if (i % 4 == 0){
+				this.baloons.push(new Baloon(250 + i * 26, 480, 480 / (5000 - Math.random() * 1000), yellowBaloonSprite, poppedYellowBaloonSprite, BaloonType.Yellow))
+			}else {
+				this.baloons.push(new Baloon(250 + i * 26, 480, 480 / (5000 - Math.random() * 1000), redbaloonSprite, poppedRedBaloonSprite, BaloonType.Red))
+			}
+		}
+	}
+	
+	update(time){
+		this.archer.update(time);		
+		this.arrowManager.update(time);
+	
+		for (let baloon of this.baloons){
+			baloon.update(time);
+			baloon.checkCollisions(this.arrowManager);
+		}
+	
+		this.baloons = this.baloons.filter((baloon) => baloon.state != BaloonState.Dead);
+	}
+	
+	
+	draw(ctx){
+		for (let baloon of this.baloons){
+			baloon.draw(ctx);
+		}
+		this.archer.draw(ctx);
+		this.arrowManager.draw(ctx);
+	}
+	
+	isComplete(){
+		return this.baloons.filter((baloon) => baloon.type == BaloonType.Red).length == 0;
+	}
+	
+	isLost(){
+		return false;
+	}
+	
+	mousemove(x, y){
+		this.archer.move(y);		
+	}
+	
+	mousedown(button){
+		if (button == 0){
+			this.archer.pull();
+		} else if (button == 2){
+			this.archer.load();
+		}
+	}
+	
+	mouseup(button){
+		if (button == 0){
+			this.archer.release();
+		}		
+	}
+}
+
+const ButteflyState = {
+  Flying: 0,
+  Poped: 1,
+  Dead: 2,
+};
+
+class Butterfly{
+	constructor(x, y, risePixelsPerMs, bubbleSprite, poppedBubbleSprite, butterflySprite){
+		this.x = x;
+		this.y = y;
+		this.risePixelsPerMs = risePixelsPerMs;
+		this.previousUpdateTime = -1;
+		this.state = ButteflyState.Flying;
+		this.bubbleSprite = bubbleSprite;
+		this.poppedBubbleSprite = poppedBubbleSprite;
+		this.butterflySprite = butterflySprite;
+	}
+	
+	checkCollisions(arrowManager){
+		if (this.state == ButteflyState.Flying && arrowManager.collidesWith(this.x, this.x + 24, this.y + 6, this.y + 30)){
+			this.state = ButteflyState.Poped;
+			this.previousUpdateTime = -1;
+			this.butterflyX = this.x;
+			this.butterflyY = this.y;
+		}	
+	}
+	
+	update(time){
+		if (this.state == ButteflyState.Flying){
+			if (this.previousUpdateTime == -1){
+				this.previousUpdateTime = time;
+			}
+			var timeSincePrevUpdateMs = time - this.previousUpdateTime;
+			this.previousUpdateTime = time;			
+			this.y -= timeSincePrevUpdateMs * this.risePixelsPerMs;
+			if (this.y < -50) {
+				this.risePixelsPerMs = -Math.abs(this.risePixelsPerMs);
+			}
+			if (this.y > 480) {
+				this.risePixelsPerMs = Math.abs(this.risePixelsPerMs);
+			}
+		}
+		if (this.state == ButteflyState.Poped){
+			if (this.previousUpdateTime == -1){
+			    this.previousUpdateTime = time;
+			}
+			var timeSincePrevUpdateMs = time - this.previousUpdateTime;
+			this.previousUpdateTime = time;
+			var pixelsPerMs = 480 / 3000;
+			this.y += timeSincePrevUpdateMs * pixelsPerMs;
+			
+			this.butterflyY -= timeSincePrevUpdateMs * 480/4000;
+			this.butterflyX -= timeSincePrevUpdateMs * 480/4000;
+			
+			if (this.y > 480 && (this.butterflyY < -20 || this.butterflyX < -20)){
+				this.state = ButteflyState.Dead;
+			}
+		}
+	}
+	
+	draw(ctx){
+		if (this.state == ButteflyState.Flying){
+			ctx.drawImage(this.bubbleSprite, this.x, this.y);
+		}else{
+			ctx.drawImage(this.poppedBubbleSprite, this.x, this.y);
+			ctx.drawImage(this.butterflySprite, this.butterflyX, this.butterflyY);	
+		}
+	}
+}
+
+class ButterflyLevel{
+	constructor(bubbleSprite, poppedBubbleSprite, butterflySprite, archer, arrowManager){	
+		this.archer = archer;
+		this.arrowManager = arrowManager;
+		this.butterflies = [];
+		for (let i = 0; i < 12; ++i){
+			this.butterflies.push(new Butterfly(250 + i * 30, Math.random() * 480, (Math.round(Math.random()) * 2 - 1) * 480 / 7000, bubbleSprite, poppedBubbleSprite, butterflySprite))
+		}
+	}
+	
+	update(time){
+		this.archer.update(time);		
+		this.arrowManager.update(time);
+		
+		for (let butterfly of this.butterflies){
+			butterfly.update(time);
+			butterfly.checkCollisions(this.arrowManager);
+		}
+	
+		this.butterflies = this.butterflies.filter((butterfly) => butterfly.state != ButteflyState.Dead);
+	}
+	
+	
+	draw(ctx){
+		for (let butterfly of this.butterflies){
+			butterfly.draw(ctx);
+		}
+		this.archer.draw(ctx);
+		this.arrowManager.draw(ctx);	
+	}
+	
+	isComplete(){
+		return this.butterflies.length == 0;
+	}
+	
+	isLost(){
+		return false;
+	}
+	
+	mousemove(x, y){
+		this.archer.move(y);		
+	}
+	
+	mousedown(button){
+		if (button == 0){
+			this.archer.pull();
+		} else if (button == 2){
+			this.archer.load();
+		}
+	}
+	
+	mouseup(button){
+		if (button == 0){
+			this.archer.release();
+		}		
+	}	
+}
+
+const SlimeState = {
+	Alive: 0,
+	Dying: 1,
+	Dead: 2
+}
+
+const TargetState = {
+	Intact: 0,
+	Dying: 1,
+	Dead: 2
+}
+
+class Target{
+	constructor(x, y, risePixelsPerMs, targetSprite, arrowSprite){
+		this.x = x;
+		this.y = y;
+		this.risePixelsPerMs = risePixelsPerMs;
+		this.previousUpdateTime = -1;
+		this.state = TargetState.Intact;
+		this.targetSprite = targetSprite;
+		this.arrowSprite = arrowSprite;
+		this.stuckArrows = [];
+	}
+	
+	checkCollisions(arrowManager){		
+		if (this.state != TargetState.Dead && arrowManager.collidesWith(this.x + 33, this.x + 49, this.y + 24, this.y + 29)){
+			this.state = TargetState.Dying;
+			this.hitTime = -1;
+		}
+		if (this.state != TargetState.Dead && arrowManager.collidesWith(this.x + 33, this.x + 49, this.y + 7, this.y + 46)){
+			let arrow = arrowManager.getCollidingArrow(this.x + 33, this.x + 49, this.y + 7, this.y + 46);			
+			this.stuckArrows.push(arrow.y - this.y);
+		}
+	}
+	
+	update(time){
+		if (this.state == TargetState.Intact){
+			if (this.previousUpdateTime == -1){
+				this.previousUpdateTime = time;
+			}
+			var timeSincePrevUpdateMs = time - this.previousUpdateTime;
+			this.previousUpdateTime = time;			
+			this.y -= timeSincePrevUpdateMs * this.risePixelsPerMs;
+			if (this.y < -50) {
+				this.risePixelsPerMs = -Math.abs(this.risePixelsPerMs);
+			}
+			if (this.y > 480) {
+				this.risePixelsPerMs = Math.abs(this.risePixelsPerMs);
+			}
+		}
+		if (this.state == TargetState.Dying){
+			if (this.hitTime == -1){
+			    this.hitTime = time;
+			}
+			if (time - this.hitTime > 1000){
+				this.state = TargetState.Dead;
+			}
+		}
+	}
+	
+	draw(ctx){
+		ctx.drawImage(this.targetSprite, this.x, this.y);
+		for (let arrowYDelta of this.stuckArrows){
+			ctx.drawImage(this.arrowSprite,  this.x + 39 - 60, this.y + arrowYDelta);
+		}
+	}
+}
+
+class TargetLevel{
+	constructor(targetSprite, arrowSprite, archer, arrowManager){	
+		this.archer = archer;
+		this.arrowManager = arrowManager;		
+		this.target = new Target(580, 400, 480/5000, targetSprite, arrowSprite);
+	}
+	
+	update(time){
+		this.archer.update(time);		
+		this.arrowManager.update(time);
+		
+		this.target.update(time);
+		this.target.checkCollisions(this.arrowManager);
+	}
+	
+	
+	draw(ctx){
+		this.target.draw(ctx);
+		this.archer.draw(ctx);
+		this.arrowManager.draw(ctx);	
+	}
+	
+	isComplete(){
+		return this.target.state == TargetState.Dead;
+	}
+	
+	isLost(){
+		return false;
+	}
+	
+	mousemove(x, y){
+		this.archer.move(y);		
+	}
+	
+	mousedown(button){
+		if (button == 0){
+			this.archer.pull();
+		} else if (button == 2){
+			this.archer.load();
+		}
+	}
+	
+	mouseup(button){
+		if (button == 0){
+			this.archer.release();
+		}		
+	}	
+}
+
+const SpawnableEnemyState = {
+	Alive: 0,
+	Dying: 1,
+	Dead: 2
+}
+
+class SpawnableEnemy{
+	constructor(x, y, movePixelsPerMs, aliveSprites, deadSprites, collisionRect, animationSpeed){
+		this.x = x;
+		this.y = y;
+		this.movePixelsPerMs = movePixelsPerMs;
+		this.previousUpdateTime = -1;
+		this.timeSpawned = -1;
+		this.timeOfDeath = -1;
+		this.state = SpawnableEnemyState.Alive;
+		this.aliveSprites = aliveSprites;
+		this.deadSprites = deadSprites;
+		this.animationFrame = 0;
+		this.collisionRect = collisionRect;
+		this.animationSpeed = animationSpeed;
+	}
+	
+	checkCollisions(arrowManager){
+		if (this.state == SpawnableEnemyState.Alive && arrowManager.collidesWith(this.x + this.collisionRect.left, this.x + this.collisionRect.right, this.y + this.collisionRect.top, this.y + this.collisionRect.bottom)){
+			this.state = SpawnableEnemyState.Dying;
+			this.timeOfDeath = -1;
+			this.animationFrame = 0;
+		}	
+	}
+	
+	checkCollisionWithArcher(archer){
+		return archer.collidesWith(this.x + this.collisionRect.left, this.x + this.collisionRect.right, this.y + this.collisionRect.top, this.y + this.collisionRect.bottom);
+	}
+	
+	update(time){
+		if (this.state == SpawnableEnemyState.Alive){
+			if (this.previousUpdateTime == -1){
+				this.previousUpdateTime = time;
+			}
+			if (this.timeSpawned == -1){
+				this.timeSpawned = time;
+			}
+			var timeSincePrevUpdateMs = time - this.previousUpdateTime;
+			this.previousUpdateTime = time;			
+			this.x -= timeSincePrevUpdateMs * this.movePixelsPerMs;
+			if (this.x < -50) {
+				this.state = SpawnableEnemyState.Dead;
+			}
+			this.animationFrame = Math.floor((time - this.timeSpawned)/this.animationSpeed) % this.aliveSprites.length;
+		}
+		if (this.state == SpawnableEnemyState.Dying){
+			if (this.timeOfDeath == -1){
+			    this.timeOfDeath = time;
+			}
+			var timeSinceDeath = time - this.timeOfDeath;
+			
+			if (timeSinceDeath > 500){
+				this.state = SpawnableEnemyState.Dead;
+			}
+			this.animationFrame = Math.floor(timeSinceDeath/this.animationSpeed) % this.deadSprites.length;
+		}
+	}
+	
+	draw(ctx){
+		if (this.animationFrame != 0 && this.state == SpawnableEnemyState.Dying){
+			console.log(this.animationFrame);
+		}
+		
+		if (this.state == SpawnableEnemyState.Alive || this.state == SpawnableEnemyState.Dying){
+			ctx.drawImage(this.state == SpawnableEnemyState.Alive ? this.aliveSprites[this.animationFrame] : this.deadSprites[this.animationFrame], this.x, this.y);
+		}
+	}
+}
+
+class SpawnableEnemyLevel{
+	constructor(aliveSprites, deadSprites, collisionRect, animationSpeed, spawnRateMs, rows, archer, arrowManager){	
+		this.archer = archer;
+		this.arrowManager = arrowManager;
+		this.enemies = [];
+		this.aliveSprites = aliveSprites;
+		this.deadSprites = deadSprites;
+		this.levelStartTime = -1;
+		this.timeElapsed = 0;
+		this.previousSpawnTime = -1;
+		this.timeOfArcherDeath = -1;
+		this.timeSinceArcherDeath = -1;
+		this.gameIsLost = false;
+		this.collisionRect = collisionRect;
+		this.animationSpeed = animationSpeed;
+		this.spawnRateMs = spawnRateMs;
+		this.rows = rows;
+	}
+	
+	update(time){
+		if (this.gameIsLost) {
+			this.timeSinceArcherDeath = time - this.timeOfArcherDeath;
+			return;
+		}
+		
+		this.archer.update(time);		
+		this.arrowManager.update(time);
+		
+		if (this.levelStartTime == -1){
+			this.levelStartTime = time;
+		}
+		
+		this.timeElapsed = time - this.levelStartTime;
+				
+		var second = Math.floor(this.timeElapsed / this.spawnRateMs);
+		if (second != this.previousSpawnTime && this.timeElapsed < 25000){
+			var rowHeight = 380 / this.rows;
+			var rowSpace = 10;
+			for (var row = 0; row < this.rows; ++row){
+				this.enemies.push(new SpawnableEnemy(640, 10 + (rowHeight + rowSpace) * row + rowHeight * Math.random(), 640 / 5000, this.aliveSprites, this.deadSprites, this.collisionRect, this.animationSpeed));
+			}
+						
+			this.previousSpawnTime = second;
+		}
+		
+		for (let enemy of this.enemies){
+			enemy.update(time);
+			enemy.checkCollisions(this.arrowManager);
+			if (enemy.checkCollisionWithArcher(this.archer)){
+				this.gameIsLost = true;
+				this.timeOfArcherDeath = time;
+			}
+		}
+	
+		this.enemies = this.enemies.filter((enemy) => enemy.state != SpawnableEnemyState.Dead);
+	}
+	
+	
+	draw(ctx){
+		this.archer.draw(ctx);
+		this.arrowManager.draw(ctx);	
+		for (let enemy of this.enemies){
+			enemy.draw(ctx);
+		}
+	}
+	
+	isComplete(){
+		return this.timeElapsed > 30000;
+	}
+	
+	isLost(){
+		return this.gameIsLost && this.timeSinceArcherDeath > 1000;
+	}
+	
+	mousemove(x, y){
+		this.archer.move(y);		
+	}
+	
+	mousedown(button){
+		if (button == 0){
+			this.archer.pull();
+		} else if (button == 2){
+			this.archer.load();
+		}
+	}
+	
+	mouseup(button){
+		if (button == 0){
+			this.archer.release();
+		}		
+	}	
+}
+
+
+var level;
+var levels = [];
+var levelId = 0;
+var sprites = loadSprites(start);
+
+function loadSprites(onLoadCompletion, onLoadProgress){
+	var sprites = [];
+	var numLoaded = 0;
+	var numError = 0;
+	
+	for (var i=1; i < 40; ++i){
+		var img = new Image();		
+		img.src = "sprites\\" + i + ".png";
+		img.onload = function () {						
+			numLoaded++;
+			if (numLoaded + numError == 39){
+				onLoadCompletion(numLoaded, numError);
+			}else if (onLoadProgress != null){		
+				onLoadProgress(numLoaded, numError);				
+			}
+		};
+		img.onerror = function () {						
+			numError++;
+			if (numLoaded + numError == 39){
+				onLoadCompletion();
+			}else if (onLoadProgress != null){
+				onLoadProgress(numLoaded, numError);
+			}
+		};
+		sprites.push(img);
+	}
+	return sprites;
+}
+
+function initLevels(){
+	
+	let arrowManager = new ArrowManager(sprites[4], false);
+	
+	let archer = new Archer(
+	  (y) => arrowManager.createArrow(y)	  
+	, {Idle: sprites[3], Loaded: sprites[0], Arming: sprites[1], Armed: sprites[2]}
+    );
+		
+	let destructableArrowManager = new ArrowManager(sprites[4], true);
+	let archerWithDestructableArrows = new Archer(
+	  (y) => destructableArrowManager.createArrow(y)
+	, {Idle: sprites[3], Loaded: sprites[0], Arming: sprites[1], Armed: sprites[2]}
+    );
+	
+	var slimeCollisionRect = new CollisionRect(0,44,0,49);
+	var fireballCollisionRect = new CollisionRect(0,60,0,20);
+	var vultureCollisionRect = new CollisionRect(0,54,34,52);
+	
+	levels = [];
+	levels.push(new ScrollLevel(sprites[32], "Target Practice\n\nOur journey begins on the target range.  Target launchers release balloons up range for the archers to shoot.  Your task -\nShoot all of the balloons."));
+	levels.push(new BaloonLevel(sprites[6], sprites[8], archer, arrowManager));
+	levels.push(new ScrollLevel(sprites[32], "More Target Practice\n\nNice shooting!\n\nThe only way to become a great archer is to practice.  After all, practice makes perfect.  Now it gets a little tougher.\nOnly shoot the RED balloons."));
+	levels.push(new YellowBaloonLevel(sprites[6], sprites[8], sprites[7], sprites[9], archer, arrowManager));	
+	levels.push(new ScrollLevel(sprites[32], "Bouncing Bubbles\n\nHaving had enough target practice for one day, you take a walk.  In a small glade you spy a number of butterflies imprisoned by bubbles.  Taking pity on the little creatures, you decide to free them... "));	
+	levels.push(new ButterflyLevel(sprites[13], sprites[14], sprites[15], archer, arrowManager));
+	levels.push(new ScrollLevel(sprites[32], "SLIMED\n\nThe greatful butterflies tell of an evil imprisonment spell cast by The Black Archer, The greatest archer in all the Land!\nGreatest? Hah! you snicker.  The Quest begins.  In your path: the SWAMP... "));
+	levels.push(new SpawnableEnemyLevel([sprites[11]], [sprites[12]], slimeCollisionRect, 100, 1300, 2, archerWithDestructableArrows, destructableArrowManager));
+	levels.push(new ScrollLevel(sprites[32], "Bulls Eye\n\nAs the Quest proceeds you will be tested for speed, cunning, and accuracy.\n\nThe tests begin!\nYou Need a Bull's Eye to Continue... "));
+	levels.push(new TargetLevel(sprites[5], sprites[4], archerWithDestructableArrows, destructableArrowManager));
+	levels.push(new ScrollLevel(sprites[32], "FIREBALLS\n\nNice Shot!\nSuddenly you hear an earth shattering raport.  The hillside nearest you explodes into thousands of flaming lava rocks, many of which are heading straight for you. No time to seek shelter... "));
+	levels.push(new SpawnableEnemyLevel([sprites[18], sprites[19]], [sprites[20]], fireballCollisionRect, 100, 1500, 2, archerWithDestructableArrows, destructableArrowManager));	
+	levels.push(new ScrollLevel(sprites[32], "Unfriendly Skies\n\nThinking those rocks may have been meant for you, you decide to send a message to your friend Khanin the Wizard.  A passing dove agrees to deliver your message.  Just then the skies went BLACK... "));
+	levels.push(new SpawnableEnemyLevel([sprites[21], sprites[22]], [sprites[23]], vultureCollisionRect, 300, 1800, 1, archerWithDestructableArrows, destructableArrowManager));	
+	
+	//levels.push(new ScrollLevel(sprites[32], "Whrrrrrrrrrr\n\nThe Black Archer is definitely on to you.  His servants are everywhere and will stop at nothing in an effort terminate your existence.  From beyond sight, you here a strange whirring noise... "));
+}
+
+function start(){	
+	initLevels();
+	
+	level = levels[levelId];
+	window.requestAnimationFrame(render);
+	setInterval(function(){ window.requestAnimationFrame(render); }, 16);
+
+	var canvas = document.getElementById("MyCanvas");
+		
+	canvas.addEventListener('mousemove', function(evt){
+		var rect = canvas.getBoundingClientRect();
+		x = evt.clientX - rect.left;
+		y = evt.clientY - rect.top;
+		
+		level.mousemove(x, y);		
+	});
+	
+	canvas.addEventListener('mousedown', function(evt){
+		level.mousedown(evt.button);		
+	});
+	
+	canvas.addEventListener('mouseup', function(evt){
+		level.mouseup(evt.button);
+	});
+	
+	canvas.addEventListener('contextmenu', function(ev) {
+		ev.preventDefault();    
+		return false;
+	}, false);
+}
+
+function render(time){
+	level.update(time);
+	
+	if (level.isComplete()){
+		++levelId;
+		if (levelId == levels.length) {
+			initLevels();
+			levelId = 0;
+		}
+		level = levels[levelId];
+	}
+	
+	if (level.isLost()){
+		if (levelId == 7){
+			level = new ScrollLevel(sprites[32], "\n\n\nYou've been Slimed...\n\nThe End");
+		}if (levelId == 11){
+			level = new ScrollLevel(sprites[32], "\n\n\OUCH\n\nThe End");
+		}if (levelId == 13){
+			level = new ScrollLevel(sprites[32], "\n\n\They must have thought you were a pigeon\n\nThe End");
+		}
+		initLevels();
+		levelId = -1;
+	}
+	
+	
+	var canvas = document.getElementById("MyCanvas");
+	var ctx = canvas.getContext("2d");
+		
+	ctx.clearRect(0, 0, 640, 480);	
+	level.draw(ctx);
+}
+
+</script>
+</head>
+<body>
+<canvas id="MyCanvas" width="640" height="480" style="border:1px solid #000000; background-color:#008000;"></canvas>
+</body>
+</html>
