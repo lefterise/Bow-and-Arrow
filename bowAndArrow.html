@@ -670,7 +670,7 @@ const SpawnableEnemyState = {
 }
 
 class SpawnableEnemy{
-	constructor(x, y, movePixelsPerMs, aliveSprites, deadSprites, collisionRect, animationSpeed){
+	constructor(x, y, movePixelsPerMs, aliveSprites, deadSprites, collisionRect, animationSpeed, animationFrameChangedCallback){
 		this.x = x;
 		this.y = y;
 		this.movePixelsPerMs = movePixelsPerMs;
@@ -683,6 +683,7 @@ class SpawnableEnemy{
 		this.animationFrame = 0;
 		this.collisionRect = collisionRect;
 		this.animationSpeed = animationSpeed;
+		this.animationFrameChangedCallback = animationFrameChangedCallback;
 	}
 	
 	checkCollisions(arrowManager){
@@ -711,7 +712,11 @@ class SpawnableEnemy{
 			if (this.x < -50) {
 				this.state = SpawnableEnemyState.Dead;
 			}
+			var prevAnimFrame = this.animationFrame;
 			this.animationFrame = Math.floor((time - this.timeSpawned)/this.animationSpeed) % this.aliveSprites.length;
+			if (this.animationFrame != prevAnimFrame && this.animationFrameChangedCallback){
+				this.animationFrameChangedCallback(this.animationFrame, this);
+			}
 		}
 		if (this.state == SpawnableEnemyState.Dying){
 			if (this.timeOfDeath == -1){
@@ -762,7 +767,7 @@ class SpawnableEnemyLevel{
 			return;
 		}
 		
-		this.archer.update(time);		
+		this.archer.update(time);
 		this.arrowManager.update(time);
 		
 		if (this.levelStartTime == -1){
@@ -811,6 +816,95 @@ class SpawnableEnemyLevel{
 		return this.gameIsLost && this.timeSinceArcherDeath > 1000;
 	}
 	
+	mousemove(x, y){
+		this.archer.move(y);		
+	}
+	
+	mousedown(button){
+		if (button == 0){
+			this.archer.pull();
+		} else if (button == 2){
+			this.archer.load();
+		}
+	}
+	
+	mouseup(button){
+		if (button == 0){
+			this.archer.release();
+		}		
+	}	
+}
+
+
+class DarkForest{
+	constructor(archer, arrowManager){
+		this.archer = archer;
+		this.arrowManager = arrowManager;
+		var collisionRect = new CollisionRect(7,72,2,72);
+		this.enemies = [];
+		this.enemies.push(new SpawnableEnemy(560,   0, 0, [sprites[26],sprites[27]], [sprites[28]], collisionRect, 1500, (frame, enemy)=>this.spawnProjectile(frame, 0, enemy.x, enemy.y + 40)));
+		this.enemies.push(new SpawnableEnemy(560, 100, 0, [sprites[27],sprites[26]], [sprites[28]], collisionRect, 1500, (frame, enemy)=>this.spawnProjectile(frame, 1, enemy.x, enemy.y + 40)));
+		this.enemies.push(new SpawnableEnemy(560, 200, 0, [sprites[26],sprites[27]], [sprites[28]], collisionRect, 1500, (frame, enemy)=>this.spawnProjectile(frame, 0, enemy.x, enemy.y + 40)));
+		this.enemies.push(new SpawnableEnemy(560, 300, 0, [sprites[27],sprites[26]], [sprites[28]], collisionRect, 1500, (frame, enemy)=>this.spawnProjectile(frame, 1, enemy.x, enemy.y + 40)));
+		this.enemies.push(new SpawnableEnemy(560, 400, 0, [sprites[26],sprites[27]], [sprites[28]], collisionRect, 1500, (frame, enemy)=>this.spawnProjectile(frame, 0, enemy.x, enemy.y + 40)));
+		
+		this.projectiles = [];
+		
+		this.levelStartTime = -1;
+		this.timeElapsed = 0;
+		this.previousSpawnTime = 0;
+		
+		this.spawnRateMs = 2000;
+		this.appleCollisionRect = new CollisionRect(0,13,0,14);
+		this.gameIsLost = false;
+	}
+	
+	update(time){
+		this.archer.update(time);
+		this.arrowManager.update(time);
+			
+		this.enemies = this.updateEnemies(time, this.enemies);
+		this.projectiles = this.updateEnemies(time, this.projectiles);
+	}
+	
+	spawnProjectile(frame, frameToShootAt, x, y){
+		if (frame == frameToShootAt){
+			this.projectiles.push(new SpawnableEnemy(x, y, 640 / 5000, [sprites[30]], [sprites[30]], this.appleCollisionRect, 500));			
+		}
+	}
+	
+	updateEnemies(time, enemies){
+		for (let enemy of enemies){
+			enemy.update(time);
+			enemy.checkCollisions(this.arrowManager);
+			if (enemy.checkCollisionWithArcher(this.archer)){
+				this.gameIsLost = true;
+				this.timeOfArcherDeath = time;
+			}
+		}
+		
+		return enemies.filter((enemy) => enemy.state != SpawnableEnemyState.Dead);
+	}	
+	
+	draw(ctx){
+		this.archer.draw(ctx);
+		this.arrowManager.draw(ctx);
+		for (let enemy of this.enemies){
+			enemy.draw(ctx);
+		}
+		for (let projectile of this.projectiles){
+			projectile.draw(ctx);
+		}
+	}
+
+	isComplete(){
+		return this.enemies.length == 0;
+	}
+	
+	isLost(){
+		return this.gameIsLost;
+	}
+
 	mousemove(x, y){
 		this.archer.move(y);		
 	}
@@ -903,7 +997,7 @@ function initLevels(){
 	levels.push(new ScrollLevel(sprites[32], "Whrrrrrrrrrr\n\nThe Black Archer is definitely on to you.  His servants are everywhere and will stop at nothing in an effort terminate your existence.  From beyond sight, you here a strange whirring noise... "));	
 	levels.push(new SpawnableEnemyLevel([sprites[33], sprites[34]], [sprites[35]], shurikenCollisionRect, 100, 1500, 2, archerWithDestructableArrows, destructableArrowManager));	
 	levels.push(new ScrollLevel(sprites[32], "Bow and Arrow\n\nversion 1.0 Abridged\nApril 1992 John Di Troia"));
-	
+	levels.push(new DarkForest(archerWithDestructableArrows, destructableArrowManager));
 }
 
 function start(){	
@@ -952,10 +1046,12 @@ function render(time){
 	if (level.isLost()){
 		if (levelId == 7){
 			level = new ScrollLevel(sprites[32], "\n\n\nYou've been Slimed...\n\nThe End");
-		}if (levelId == 11){
+		}else if (levelId == 11){
 			level = new ScrollLevel(sprites[32], "\n\n\OUCH\n\nThe End");
-		}if (levelId == 13){
+		}else if (levelId == 13){
 			level = new ScrollLevel(sprites[32], "\n\n\They must have thought you were a pigeon\n\nThe End");
+		}else if (levelId == 17){
+			level = new ScrollLevel(sprites[32], "\n\n\You've been made apple sauce\n\nThe End");
 		}
 		initLevels();
 		levelId = -1;
