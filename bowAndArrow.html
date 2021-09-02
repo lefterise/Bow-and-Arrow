@@ -87,15 +87,22 @@ class Archer{
 	}
 }
 
+class ArrowTip{
+	constructor(x,y){
+		this.x = x;
+		this.y = y;
+	}
+}
+
 class Arrow{
-	constructor(y, arrowSprite, destroyOnCollision){
+	constructor(y, arrowSprite){
 		this.y = y;
 		this.x = 51;
 		this.prevX = 51;
 		this.animationStartTime = -1;
 		this.arrowSprite = arrowSprite;
 		this.isAlive = true;
-		this.destroyOnCollision = destroyOnCollision;
+		this.tip = new ArrowTip(60, 2);
 	}
 	
 	update(time){
@@ -118,13 +125,10 @@ class Arrow{
 	}
 	
 	collidesWith(left,right,top,bottom){
-		let tipX = this.x + 60;
-		let prevTipX = this.prevX + 60;
-		let collided = (this.y + 2 >= top && this.y +2 <= bottom && prevTipX <= right && tipX >= left);
+		let tipX = this.x + this.tip.x;
+		let prevTipX = this.prevX + this.tip.x;
+		let collided = (this.y + this.tip.y >= top && this.y + this.tip.y <= bottom && prevTipX <= right && tipX >= left);
 		
-		if(collided && this.destroyOnCollision){
-			this.isAlive = false;
-		}
 		return collided;
 	}
 }
@@ -166,6 +170,13 @@ class ArrowManager{
 			}
 		}
 		return null;
+	}
+	
+	destroyArrow(arrow){
+		const index = this.arrows.indexOf(arrow);
+		if (index > -1) {
+			this.arrows.splice(index, 1);
+		}
 	}
 }
 
@@ -576,8 +587,9 @@ class Target{
 			this.hitTime = -1;
 		}
 		if (this.state != TargetState.Dead && arrowManager.collidesWith(this.x + 33, this.x + 49, this.y + 7, this.y + 46)){
-			let arrow = arrowManager.getCollidingArrow(this.x + 33, this.x + 49, this.y + 7, this.y + 46);			
+			let arrow = arrowManager.getCollidingArrow(this.x + 33, this.x + 49, this.y + 7, this.y + 46);
 			this.stuckArrows.push(arrow.y - this.y);
+			arrowManager.destroyArrow(arrow);
 		}
 	}
 	
@@ -686,12 +698,18 @@ class SpawnableEnemy{
 		this.animationFrameChangedCallback = animationFrameChangedCallback;
 	}
 	
+	die(){
+		this.state = SpawnableEnemyState.Dying;
+		this.timeOfDeath = -1;
+		this.animationFrame = 0;
+	}
+	
 	checkCollisions(arrowManager){
-		if (this.state == SpawnableEnemyState.Alive && arrowManager.collidesWith(this.x + this.collisionRect.left, this.x + this.collisionRect.right, this.y + this.collisionRect.top, this.y + this.collisionRect.bottom)){
-			this.state = SpawnableEnemyState.Dying;
-			this.timeOfDeath = -1;
-			this.animationFrame = 0;
-		}	
+		if (this.state == SpawnableEnemyState.Alive && arrowManager.collidesWith(this.x + this.collisionRect.left, this.x + this.collisionRect.right, this.y + this.collisionRect.top, this.y + this.collisionRect.bottom)){			
+			let arrow = arrowManager.getCollidingArrow(this.x + this.collisionRect.left, this.x + this.collisionRect.right, this.y + this.collisionRect.top, this.y + this.collisionRect.bottom);
+			return arrow;					
+		}
+		return null;
 	}
 	
 	checkCollisionWithArcher(archer){
@@ -789,7 +807,12 @@ class SpawnableEnemyLevel{
 		
 		for (let enemy of this.enemies){
 			enemy.update(time);
-			enemy.checkCollisions(this.arrowManager);
+			var arrow = enemy.checkCollisions(this.arrowManager);
+			if (arrow){
+				enemy.die(); 
+				this.arrowManager.destroyArrow(arrow)
+			}
+			
 			if (enemy.checkCollisionWithArcher(this.archer)){
 				this.gameIsLost = true;
 				this.timeOfArcherDeath = time;
@@ -835,6 +858,44 @@ class SpawnableEnemyLevel{
 	}	
 }
 
+class Fire{
+	constructor(){
+		this.prevTime = -1;
+		this.y = 480;
+		this.x = 320;
+		this.collisionRect = new CollisionRect(2,25,0,31);
+	}
+	
+	checkCollisions(arrowManager){
+		if (arrowManager.collidesWith(this.x + this.collisionRect.left, this.x + this.collisionRect.right, this.y + this.collisionRect.top, this.y + this.collisionRect.bottom)){			
+			let arrow = arrowManager.getCollidingArrow(this.x + this.collisionRect.left, this.x + this.collisionRect.right, this.y + this.collisionRect.top, this.y + this.collisionRect.bottom);
+			
+			if (arrow.arrowSprite != sprites[31]){
+				arrow.arrowSprite = sprites[31];
+				arrow.tip = new ArrowTip(60, 7);
+				arrow.y -= 5;
+				arrow.onFire = true;
+			}
+		}	
+	}
+	
+	update(time){
+		if (this.prevTime == -1){
+			this.prevTime = time;
+		}
+		var timeSincePrevUpdateMs = time - this.prevTime;
+		this.prevTime = time;
+		
+		this.y = this.y - 0.1 * timeSincePrevUpdateMs;
+		if (this.y < -31){
+			this.y = 480;
+		}
+	}
+	
+	draw(ctx){
+		ctx.drawImage(sprites[29], this.x, this.y);
+	}
+}
 
 class DarkForest{
 	constructor(archer, arrowManager){
@@ -857,14 +918,27 @@ class DarkForest{
 		this.spawnRateMs = 2000;
 		this.appleCollisionRect = new CollisionRect(0,13,0,14);
 		this.gameIsLost = false;
+		
+		this.fire = new Fire();
+		
+		this.timeSinceArcherDeath = -1;
 	}
 	
 	update(time){
+		if (this.gameIsLost) {
+			this.timeSinceArcherDeath = time - this.timeOfArcherDeath;
+			return;
+		}
+
+
 		this.archer.update(time);
 		this.arrowManager.update(time);
-			
-		this.enemies = this.updateEnemies(time, this.enemies);
-		this.projectiles = this.updateEnemies(time, this.projectiles);
+		this.fire.update(time);
+		
+		this.fire.checkCollisions(this.arrowManager);
+		
+		this.enemies = this.updateEnemies(time, this.enemies, true);
+		this.projectiles = this.updateEnemies(time, this.projectiles, false);		
 	}
 	
 	spawnProjectile(frame, frameToShootAt, x, y){
@@ -873,10 +947,16 @@ class DarkForest{
 		}
 	}
 	
-	updateEnemies(time, enemies){
+	updateEnemies(time, enemies, onlyFlamingArrowsKill){
 		for (let enemy of enemies){
 			enemy.update(time);
-			enemy.checkCollisions(this.arrowManager);
+			let arrow = enemy.checkCollisions(this.arrowManager);
+			if (arrow){
+				this.arrowManager.destroyArrow(arrow);
+				if (!onlyFlamingArrowsKill || arrow.onFire && arrow.onFire == true){
+					enemy.die();
+				}
+			}
 			if (enemy.checkCollisionWithArcher(this.archer)){
 				this.gameIsLost = true;
 				this.timeOfArcherDeath = time;
@@ -889,6 +969,8 @@ class DarkForest{
 	draw(ctx){
 		this.archer.draw(ctx);
 		this.arrowManager.draw(ctx);
+		this.fire.draw(ctx);
+		
 		for (let enemy of this.enemies){
 			enemy.draw(ctx);
 		}
@@ -902,7 +984,7 @@ class DarkForest{
 	}
 	
 	isLost(){
-		return this.gameIsLost;
+		return this.gameIsLost && this.timeSinceArcherDeath > 1000;
 	}
 
 	mousemove(x, y){
@@ -968,12 +1050,6 @@ function initLevels(){
 	, {Idle: sprites[3], Loaded: sprites[0], Arming: sprites[1], Armed: sprites[2]}
     );
 		
-	let destructableArrowManager = new ArrowManager(sprites[4], true);
-	let archerWithDestructableArrows = new Archer(
-	  (y) => destructableArrowManager.createArrow(y)
-	, {Idle: sprites[3], Loaded: sprites[0], Arming: sprites[1], Armed: sprites[2]}
-    );
-	
 	var slimeCollisionRect = new CollisionRect(0,44,0,49);
 	var fireballCollisionRect = new CollisionRect(0,60,0,20);
 	var vultureCollisionRect = new CollisionRect(0,54,34,52);
@@ -987,17 +1063,36 @@ function initLevels(){
 	levels.push(new ScrollLevel(sprites[32], "Bouncing Bubbles\n\nHaving had enough target practice for one day, you take a walk.  In a small glade you spy a number of butterflies imprisoned by bubbles.  Taking pity on the little creatures, you decide to free them... "));	
 	levels.push(new ButterflyLevel(sprites[13], sprites[14], sprites[15], archer, arrowManager));
 	levels.push(new ScrollLevel(sprites[32], "SLIMED\n\nThe greatful butterflies tell of an evil imprisonment spell cast by The Black Archer, The greatest archer in all the Land!\nGreatest? Hah! you snicker.  The Quest begins.  In your path: the SWAMP... "));
-	levels.push(new SpawnableEnemyLevel([sprites[11]], [sprites[12]], slimeCollisionRect, 100, 1300, 2, archerWithDestructableArrows, destructableArrowManager));
+	levels.push(new SpawnableEnemyLevel([sprites[11]], [sprites[12]], slimeCollisionRect, 100, 1300, 2, archer, arrowManager));
 	levels.push(new ScrollLevel(sprites[32], "Bulls Eye\n\nAs the Quest proceeds you will be tested for speed, cunning, and accuracy.\n\nThe tests begin!\nYou Need a Bull's Eye to Continue... "));
-	levels.push(new TargetLevel(sprites[5], sprites[4], archerWithDestructableArrows, destructableArrowManager));
+	levels.push(new TargetLevel(sprites[5], sprites[4], archer, arrowManager));
 	levels.push(new ScrollLevel(sprites[32], "FIREBALLS\n\nNice Shot!\nSuddenly you hear an earth shattering raport.  The hillside nearest you explodes into thousands of flaming lava rocks, many of which are heading straight for you. No time to seek shelter... "));
-	levels.push(new SpawnableEnemyLevel([sprites[18], sprites[19]], [sprites[20]], fireballCollisionRect, 100, 1500, 2, archerWithDestructableArrows, destructableArrowManager));	
+	levels.push(new SpawnableEnemyLevel([sprites[18], sprites[19]], [sprites[20]], fireballCollisionRect, 100, 1500, 2, archer, arrowManager));	
 	levels.push(new ScrollLevel(sprites[32], "Unfriendly Skies\n\nThinking those rocks may have been meant for you, you decide to send a message to your friend Khanin the Wizard.  A passing dove agrees to deliver your message.  Just then the skies went BLACK... "));
-	levels.push(new SpawnableEnemyLevel([sprites[21], sprites[22]], [sprites[23]], vultureCollisionRect, 300, 1800, 1, archerWithDestructableArrows, destructableArrowManager));	
+	levels.push(new SpawnableEnemyLevel([sprites[21], sprites[22]], [sprites[23]], vultureCollisionRect, 300, 1800, 1, archer, arrowManager));	
 	levels.push(new ScrollLevel(sprites[32], "Whrrrrrrrrrr\n\nThe Black Archer is definitely on to you.  His servants are everywhere and will stop at nothing in an effort terminate your existence.  From beyond sight, you here a strange whirring noise... "));	
-	levels.push(new SpawnableEnemyLevel([sprites[33], sprites[34]], [sprites[35]], shurikenCollisionRect, 100, 1500, 2, archerWithDestructableArrows, destructableArrowManager));	
+	levels.push(new SpawnableEnemyLevel([sprites[33], sprites[34]], [sprites[35]], shurikenCollisionRect, 100, 1500, 2, archer, arrowManager));	
+	levels.push(new ScrollLevel(sprites[32], "Dark Forest\n\nAs you wind your way along the path unseen eyes are glaring at you.  When you reach the edge of a line of trees you are in for nothing but trouble...\n\nI hope the Message Got through to Khanin. "));
+	levels.push(new DarkForest(archer, arrowManager));
+	//levels.push(new ScrollLevel(sprites[32], "Marching Pyronians\n\nThe Pyronians are an ancient race of Fire Walkers. They are invulnerable at their Hottest and they are marching straight for you.  Sometimes its best to get out of their way..."));
+	//levels.push(new ScrollLevel(sprites[32], "Imprisoned\n\nStumbling into an open meadow you are shocked at the sight. So the Black Archer was only practicing his evil spells on the Butterflies. He won't get away with this!  Be careful, strange clouds are among the fairies... "));
+	//levels.push(new ScrollLevel(sprites[32], "Outpost\n\nYou are deep into the Black Archer's territory now as you stumble into an outpost armed with heavy artillery.  Behind the catapult You notice a large rodent, seemingly in a trance... "));	
+	//levels.push(new ScrollLevel(sprites[32], "Dragons\n\nWith scales as strong as the hardest steel and breath hotter than molten lava, the oldest of the land's creatures is a most powerful enemy.\nYour arrows won't find many chinks in this beasts armor... "));
+	//levels.push(new ScrollLevel(sprites[32], "Bulls Eye\n\nSimple target practice for a seasoned archer like yourself.  Getting a Bulls Eye is as good as done... "));
+	//levels.push(new ScrollLevel(sprites[32], "Night Predators\n\nThese quick and agile creatures can out maneuver the most capable hunter. ... "));
+	//levels.push(new ScrollLevel(sprites[32], "Demons\n\nThe most vile of the Black Archer's minions.  None have ever faced this spawn of the shadows and lived to tell.  Your arrows seem to have no effect on this darkling... "));
+	//levels.push(new ScrollLevel(sprites[32], "Harpies\n\nAttacking in unison, a small band of harpies attempt to foil your quest for the Black Archer. Their small arrows mean instant death ... "));
+	//levels.push(new ScrollLevel(sprites[32], "Imperial Guards\n\nThe Imperial Guards are blocking your way.\nLoathesome creatures; half man - half beast.  They possess great strength and a unique weapon..."));
+	//levels.push(new ScrollLevel(sprites[32], "Bulls Eye\n\nTime for your favorite level, with a twist. All you have to do is hit Blue or Yellow on the Target to proceed.\n\nOh yes,\nthe arrow must also pass through the golden ring..."));
+	//levels.push(new ScrollLevel(sprites[32], "The Duel\nFinally, we meet face to face.\nBEWARE!\nYour magic feathers are no good here.  The Black Archer is quick and cunning.  No one has ever survived the Duel.\nTwo enter the Arena, Only One returns...\n\nGood Luck"));
+	levels.push(new ScrollLevel(sprites[32], "Bow and Arrow\nIn Search of\nthe Greatest Archer\n\n the Black archer has been defeated!  His Legacy of curruption and treachery is at an end.\nYou are\nTHE GREATEST ARCHER"));
+	
+
 	levels.push(new ScrollLevel(sprites[32], "Bow and Arrow\n\nversion 1.0 Abridged\nApril 1992 John Di Troia"));
-	levels.push(new DarkForest(archerWithDestructableArrows, destructableArrowManager));
+	
+	
+	
+
 }
 
 function start(){	
@@ -1050,6 +1145,8 @@ function render(time){
 			level = new ScrollLevel(sprites[32], "\n\n\OUCH\n\nThe End");
 		}else if (levelId == 13){
 			level = new ScrollLevel(sprites[32], "\n\n\They must have thought you were a pigeon\n\nThe End");
+		}else if (levelId == 15){
+			level = new ScrollLevel(sprites[32], "\n\n\Don't loose your head!\n\nThe End");			
 		}else if (levelId == 17){
 			level = new ScrollLevel(sprites[32], "\n\n\You've been made apple sauce\n\nThe End");
 		}
