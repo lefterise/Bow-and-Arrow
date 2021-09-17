@@ -15,7 +15,8 @@ const ArcherState = {
   Idle: 0,
   Loaded: 1,
   Arming: 2,
-  Armed: 3,  
+  Armed: 3,
+  Manual: 4
 };
 
 class Archer{
@@ -48,14 +49,33 @@ class Archer{
 			this.state = ArcherState.Arming;
 			this.sprite = this.sprites.Arming;
 		}		
-	}	
+	}
+	
+	relax(){
+		this.state = ArcherState.Loaded;
+		this.sprite = this.sprites.Loaded;
+	}
+	
+	stretchALittle(){
+		this.state = ArcherState.Manual;
+		this.sprite = this.sprites.Arming;
+	}
+	
+	stretchFull(){
+		this.state = ArcherState.Armed;
+		this.sprite = this.sprites.Armed;
+	}
 
 	release(){
 		if (this.state == ArcherState.Arming || this.state == ArcherState.Armed){
 			this.state = ArcherState.Idle;
 			this.sprite = this.sprites.Idle;
 			this.fire(this.y + 59);
-		}		
+		}
+		if (this.state == ArcherState.Manual){
+			this.state = ArcherState.Loaded;
+			this.sprite = this.sprites.Loaded;
+		}
 	}
 	
 	update(time){
@@ -276,7 +296,7 @@ class BaloonLevel{
 	}
 	
 	mousemove(x, y){
-		this.archer.move(y);		
+		this.archer.move(y);
 	}
 	
 	mousedown(button){
@@ -290,8 +310,29 @@ class BaloonLevel{
 	mouseup(button){
 		if (button == 0){
 			this.archer.release();
-		}		
-	}	
+		}
+	}
+	
+	touchmove(x, y){
+		this.archer.move(y);
+		if ( x - this.touchStartLoc.x < -30){
+			this.archer.stretchFull();
+		} else if ( x - this.touchStartLoc.x < -15){
+			this.archer.stretchALittle();
+		} else{
+			this.archer.relax();
+		}
+
+	}
+	
+	touchstart(x, y){
+		this.touchStartLoc = {x: x, y: y};
+		this.archer.load();
+	}
+	
+	touchend(x, y){
+		this.archer.release();
+	}
 }
 
 function wrapText(context, text, x, y, maxWidth,lineHeight){
@@ -360,6 +401,12 @@ class ScrollLevel{
 			this.complete = true;
 		}		
 	}
+	
+	touchmove(x, y){}
+	touchstart(x, y){}
+	touchend(x, y){
+		this.complete = true;
+	}
 }
 
 const BaloonType = {
@@ -426,6 +473,27 @@ class YellowBaloonLevel{
 		if (button == 0){
 			this.archer.release();
 		}		
+	}
+	
+	touchmove(x, y){
+		this.archer.move(y);
+		if ( x - this.touchStartLoc.x < -30){
+			this.archer.stretchFull();
+		} else if ( x - this.touchStartLoc.x < -15){
+			this.archer.stretchALittle();
+		} else{
+			this.archer.relax();
+		}
+
+	}
+	
+	touchstart(x, y){
+		this.touchStartLoc = {x: x, y: y};
+		this.archer.load();
+	}
+	
+	touchend(x, y){
+		this.archer.release();
 	}
 }
 
@@ -554,6 +622,27 @@ class ButterflyLevel{
 		if (button == 0){
 			this.archer.release();
 		}		
+	}
+	
+	touchmove(x, y){
+		this.archer.move(y);
+		if ( x - this.touchStartLoc.x < -30){
+			this.archer.stretchFull();
+		} else if ( x - this.touchStartLoc.x < -15){
+			this.archer.stretchALittle();
+		} else{
+			this.archer.relax();
+		}
+
+	}
+	
+	touchstart(x, y){
+		this.touchStartLoc = {x: x, y: y};
+		this.archer.load();
+	}
+	
+	touchend(x, y){
+		this.archer.release();
 	}	
 }
 
@@ -672,7 +761,28 @@ class TargetLevel{
 		if (button == 0){
 			this.archer.release();
 		}		
-	}	
+	}
+
+	touchmove(x, y){
+		this.archer.move(y);
+		if ( x - this.touchStartLoc.x < -30){
+			this.archer.stretchFull();
+		} else if ( x - this.touchStartLoc.x < -15){
+			this.archer.stretchALittle();
+		} else{
+			this.archer.relax();
+		}
+
+	}
+	
+	touchstart(x, y){
+		this.touchStartLoc = {x: x, y: y};
+		this.archer.load();
+	}
+	
+	touchend(x, y){
+		this.archer.release();
+	}
 }
 
 const SpawnableEnemyState = {
@@ -869,7 +979,28 @@ class SpawnableEnemyLevel{
 		if (button == 0){
 			this.archer.release();
 		}		
-	}	
+	}
+
+	touchmove(x, y){
+		this.archer.move(y);
+		if ( x - this.touchStartLoc.x < -30){
+			this.archer.stretchFull();
+		} else if ( x - this.touchStartLoc.x < -15){
+			this.archer.stretchALittle();
+		} else{
+			this.archer.relax();
+		}
+
+	}
+	
+	touchstart(x, y){
+		this.touchStartLoc = {x: x, y: y};
+		this.archer.load();
+	}
+	
+	touchend(x, y){
+		this.archer.release();
+	}
 }
 
 class VultureLevel{
@@ -919,6 +1050,27 @@ class VultureLevel{
 	
 	mouseup(button){
 		this.spawnableLevel.mouseup(button);
+	}
+
+	touchmove(x, y){
+		this.archer.move(y);
+		if ( x - this.touchStartLoc.x < -30){
+			this.archer.stretchFull();
+		} else if ( x - this.touchStartLoc.x < -15){
+			this.archer.stretchALittle();
+		} else{
+			this.archer.relax();
+		}
+
+	}
+	
+	touchstart(x, y){
+		this.touchStartLoc = {x: x, y: y};
+		this.archer.load();
+	}
+	
+	touchend(x, y){
+		this.archer.release();
 	}	
 }
 
@@ -1071,6 +1223,27 @@ class DarkForest{
 		if (button == 0){
 			this.archer.release();
 		}		
+	}
+
+	touchmove(x, y){
+		this.archer.move(y);
+		if ( x - this.touchStartLoc.x < -30){
+			this.archer.stretchFull();
+		} else if ( x - this.touchStartLoc.x < -15){
+			this.archer.stretchALittle();
+		} else{
+			this.archer.relax();
+		}
+
+	}
+	
+	touchstart(x, y){
+		this.touchStartLoc = {x: x, y: y};
+		this.archer.load();
+	}
+	
+	touchend(x, y){
+		this.archer.release();
 	}	
 }
 
@@ -1172,7 +1345,7 @@ function start(){
 	setInterval(function(){ window.requestAnimationFrame(render); }, 16);
 
 	var canvas = document.getElementById("MyCanvas");
-		
+	
 	canvas.addEventListener('mousemove', function(evt){
 		var rect = canvas.getBoundingClientRect();
 		x = evt.clientX - rect.left;
@@ -1188,6 +1361,39 @@ function start(){
 	canvas.addEventListener('mouseup', function(evt){
 		level.mouseup(evt.button);
 	});
+	
+    canvas.addEventListener('touchstart', function(e){
+        var touchobj = e.changedTouches[0];
+		var rect = canvas.getBoundingClientRect();
+        
+		x = touchobj.clientX - rect.left;
+		y = touchobj.clientY - rect.top;
+		level.touchstart(x, y);
+		
+        e.preventDefault();
+    }, false);
+	
+	canvas.addEventListener('touchmove', function(e){
+        var touchobj = e.changedTouches[0];
+		var rect = canvas.getBoundingClientRect();
+        
+		x = touchobj.clientX - rect.left;
+		y = touchobj.clientY - rect.top;
+		level.touchmove(x, y);
+		
+        e.preventDefault();
+    }, false);
+	
+	canvas.addEventListener('touchend', function(e){
+        var touchobj = e.changedTouches[0];
+		var rect = canvas.getBoundingClientRect();
+        
+		x = touchobj.clientX - rect.left;
+		y = touchobj.clientY - rect.top;
+		level.touchend(x, y);
+		
+        e.preventDefault();
+    }, false);
 	
 	canvas.addEventListener('contextmenu', function(ev) {
 		ev.preventDefault();    
