@@ -6,7 +6,9 @@ Mouse
 * Left click - Fire Arrow
 
 Touch
-*Tap drag to move
-*Tap to load
-*Drag left to pull
-*Release to Fire
+* Tap drag to move
+* Tap to load
+* Trag left to pull
+* Release to Fire
+
+https://lefterise.github.io/Bow-and-Arrow/
