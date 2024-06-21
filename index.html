@@ -126,7 +126,7 @@ function initLevels(){
 	levels.push(new BerserkLevel(sprites[49], sprites[50], sprites[51],archer, arrowManager));	
 	levels.push(new ScrollLevel(sprites[32], "Outpost\n\nYou are deep into the Black Archer's territory now as you stumble into an outpost armed with heavy artillery.  Behind the catapult You notice a large rodent, seemingly in a trance... "));
 	levels.push(new OutpostLevel([sprites[55],sprites[56],sprites[57],sprites[58],sprites[59]], archer, arrowManager));
-	//levels.push(new ScrollLevel(sprites[32], "Dragons\n\nWith scales as strong as the hardest steel and breath hotter than molten lava, the oldest of the land's creatures is a most powerful enemy.\nYour arrows won't find many chinks in this beasts armor... "));
+	levels.push(new ScrollLevel(sprites[32], "Dragons\n\nWith scales as strong as the hardest steel and breath hotter than molten lava, the oldest of the land's creatures is a most powerful enemy.\nYour arrows won't find many chinks in this beasts armor... "));
 	//levels.push(new ScrollLevel(sprites[32], "Bulls Eye\n\nSimple target practice for a seasoned archer like yourself.  Getting a Bulls Eye is as good as done... "));
 	//levels.push(new ScrollLevel(sprites[32], "Night Predators\n\nThese quick and agile creatures can out maneuver the most capable hunter. ... "));
 	//levels.push(new ScrollLevel(sprites[32], "Demons\n\nThe most vile of the Black Archer's minions.  None have ever faced this spawn of the shadows and lived to tell.  Your arrows seem to have no effect on this darkling... "));
@@ -135,12 +135,28 @@ function initLevels(){
 	//levels.push(new ScrollLevel(sprites[32], "Bulls Eye\n\nTime for your favorite level, with a twist. All you have to do is hit Blue or Yellow on the Target to proceed.\n\nOh yes,\nthe arrow must also pass through the golden ring..."));
 	//levels.push(new ScrollLevel(sprites[32], "The Duel\nFinally, we meet face to face.\nBEWARE!\nYour magic feathers are no good here.  The Black Archer is quick and cunning.  No one has ever survived the Duel.\nTwo enter the Arena, Only One returns...\n\nGood Luck"));
 	levels.push(new ScrollLevel(sprites[32], "Bow and Arrow\nIn Search of\nthe Greatest Archer\n\n the Black archer has been defeated!  His Legacy of curruption and treachery is at an end.\nYou are\nTHE GREATEST ARCHER"));	
-	levels.push(new ScrollLevel(sprites[32], "Bow and Arrow\n\nversion 1.0 Abridged\nApril 1992 John Di Troia"));
-	
-	
-	
-
+	levels.push(new ScrollLevel(sprites[32], "Bow and Arrow\n\nversion 1.0 Abridged\nApril 1992 John Di Troia"));		
 }
+
+const lossMessage = {
+	0: "\n\n\What does an archer do without his arrows?\nHe doesn't continue in this Game.",
+	7: "\n\n\n\nYou've been Slimed...",
+	9: "\n\n\n\nYou'll have to shoot better than that to continue this Quest...",
+	11: "\n\n\n\nOUCH",
+	13: "\n\n\n\nThey must have thought you were a pigeon.",
+	15: "\n\n\n\nDon't loose your head!",
+	17: "\n\n\nYou can't make apple sauce with those apples.",
+	19: "\n\n\n\nYeow, they're HOT!!!",
+	21: "\n\n\n---ZAP---\nWatch out for the GUARDIANS",
+	23: "\n\nThe barbarians celebrate their victory by perching your head on a pike.",
+	25: "\n\n\nWhy that\nDIRTY RAT!",
+	27: "\n\nRoasted and devoured\nYou made a fine appetizer for the winged beast.",
+	29: "\n\n\n\nWho says BATS are blind.",
+	31: "\n\n\n\nDon't try to look him in the Eyes!",
+	33: "\n\n\n\nThe Harpies frolic with glee over your fallen body.",
+	35: "\n\n\n\nThe Energy ORBS are unstoppable.",
+	37: "\n\n\n\nThe Black Archer is STILL the Greatest Archer in all the Land"
+};
 
 function start(){	
 	initLevels();
@@ -169,38 +185,29 @@ function start(){
 	
     canvas.addEventListener('touchstart', function(e){
 		if (canvas.requestFullscreen && document.fullscreenElement != canvas){                
-			canvas.requestFullscreen();
 			screen.orientation.lock("landscape");
+			canvas.requestFullscreen();
 		}
 
-        var touchobj = e.changedTouches[0];
-		var rect = canvas.getBoundingClientRect();
-        
-		x = touchobj.clientX - rect.left;
-		y = touchobj.clientY - rect.top;
-		level.touchstart(x, y);
+        var touchobj = e.changedTouches[0];		
+		let c = mapToGameCoordinates(canvas, touchobj);
+		level.touchstart(c.x, c.y);
 		
         e.preventDefault();
     }, false);
 	
 	canvas.addEventListener('touchmove', function(e){
-        var touchobj = e.changedTouches[0];
-		var rect = canvas.getBoundingClientRect();
-        
-		x = touchobj.clientX - rect.left;
-		y = touchobj.clientY - rect.top;
-		level.touchmove(x, y);
+        var touchobj = e.changedTouches[0];		
+		let c = mapToGameCoordinates(canvas, touchobj);
+		level.touchmove(c.x, c.y);
 		
         e.preventDefault();
     }, false);
 	
 	canvas.addEventListener('touchend', function(e){
         var touchobj = e.changedTouches[0];
-		var rect = canvas.getBoundingClientRect();
-        
-		x = touchobj.clientX - rect.left;
-		y = touchobj.clientY - rect.top;
-		level.touchend(x, y);
+		let c = mapToGameCoordinates(canvas, touchobj);
+		level.touchend(c.x, c.y);
 		
         e.preventDefault();
     }, false);
@@ -210,6 +217,30 @@ function start(){
 		return false;
 	}, false);
 }
+
+function mapToGameCoordinates(canvas, touchobj){
+        if (document.fullscreenElement == canvas){           
+            if (canvas.clientWidth / canvas.width < canvas.clientHeight/canvas.height){
+                //width fits, height is adjusted.
+                let width = canvas.clientWidth;
+                let height = canvas.height * canvas.clientWidth / canvas.width;
+                let left = 0;
+                let top = (canvas.clientHeight - height) / 2;
+
+                return {x: (touchobj.clientX - left) / width * canvas.width, y: (touchobj.clientY - top) / height * canvas.height};
+            }else {
+                //height fits, width is adjusted
+                let width = canvas.width * canvas.clientHeight / canvas.height;
+                let height = canvas.clientHeight;
+                let left = (canvas.clientWidth - width) / 2;
+                let top = 0;
+
+                return {x: (touchobj.clientX - left) / width * canvas.width, y: (touchobj.clientY - top) / height * canvas.height};
+            }
+        } else {
+            return {x: touchobj.clientX / canvas.clientWidth * canvas.width, y: touchobj.clientY / canvas.clientHeight * canvas.height};
+        }
+    }
 
 function render(time){
 	level.update(time);
@@ -222,27 +253,11 @@ function render(time){
 		}
 		level = levels[levelId];
 	}
-	
+
 	if (level.isLost()){
-		if (levelId == 7){
-			level = new ScrollLevel(sprites[32], "\n\n\nYou've been Slimed...\n\nThe End");
-		}else if (levelId == 11){
-			level = new ScrollLevel(sprites[32], "\n\nOUCH\n\nThe End");
-		}else if (levelId == 13){
-			level = new ScrollLevel(sprites[32], "\n\nThey must have thought you were a pigeon\n\nThe End");
-		}else if (levelId == 15){
-			level = new ScrollLevel(sprites[32], "\n\nDon't loose your head!\n\nThe End");			
-		}else if (levelId == 17){
-			level = new ScrollLevel(sprites[32], "\n\nYou've been made apple sauce\n\nThe End");
-		}else if (levelId == 19){
-			level = new ScrollLevel(sprites[32], "\n\nYeow, they're HOT!!!\n\nThe End");
-		}else if (levelId == 21){
-			level = new ScrollLevel(sprites[32], "\n\n---ZAP---\nWatch out for the GUARDIANS\n\nThe End");
-		}else if (levelId == 23){
-			level = new ScrollLevel(sprites[32], "\n\nThe barbarians celebrate their victory by perching your head on a pike.\n\nThe End");
-		}else if (levelId == 25){
-			level = new ScrollLevel(sprites[32], "\n\nWhy that\nDIRTY RAT!\n\nThe End");
-		}
+		let message = lossMessage[levelId] ?? lossMessage[0];
+		level = new ScrollLevel(sprites[32], message + "\n\nThe End");
+		
 		initLevels();
 		levelId = -1;
 	}

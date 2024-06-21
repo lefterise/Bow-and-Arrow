@@ -122,11 +122,11 @@ class BerserkLevel{
         this.archer = archer;
 		this.arrowManager = arrowManager;
         this.sprites = [berserkGuardingSprite, berserkAttackingSprite, axeSprite];
-		this.berserks = [];
+		this.berserks = [new Berserk(640, 360 * Math.random(), -0.1, this.sprites)];
 		this.projectiles = [];
 		this.gameIsLost = false;
         
-		this.spawner = new PeriodicEvent(20, 2500, ()=>{
+		this.spawner = new PeriodicEvent(19, 2500, ()=>{
 			this.berserks.push(new Berserk(640, 360 * Math.random(), -0.1, this.sprites));
 		});
     }
