@@ -5,15 +5,16 @@ const TargetState = {
 }
 
 class Target{
-	constructor(x, y, risePixelsPerMs, targetSprite, arrowSprite){
+	constructor(x, y, risePixelsPerMs, targetSprite){
 		this.x = x;
 		this.y = y;
 		this.risePixelsPerMs = risePixelsPerMs;
 		this.previousUpdateTime = -1;
 		this.state = TargetState.Intact;
 		this.targetSprite = targetSprite;
-		this.arrowSprite = arrowSprite;
 		this.stuckArrows = [];
+
+		this.arrowTemplate = new Arrow(0,0,1,0);
 	}
 	
 	checkCollisions(arrowManager){		
@@ -56,7 +57,9 @@ class Target{
 	draw(ctx){
 		ctx.drawImage(this.targetSprite, this.x, this.y);
 		for (let arrowYDelta of this.stuckArrows){
-			ctx.drawImage(this.arrowSprite,  this.x + 39 - 60, this.y + arrowYDelta);
+			this.arrowTemplate.x = this.x + 39;
+			this.arrowTemplate.y = this.y + arrowYDelta;
+			this.arrowTemplate.draw(ctx);
 		}
 	}
 }

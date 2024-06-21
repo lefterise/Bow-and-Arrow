@@ -6,53 +6,85 @@ class ArrowTip{
 }
 
 class Arrow{
-	constructor(y, arrowSprite){
+	constructor(x, y, dx, dy){
 		this.y = y;
-		this.x = 51;
-		this.prevX = 51;
-		this.animationStartTime = -1;
-		this.arrowSprite = arrowSprite;
+		this.x = x;
+		this.dx = dx;
+		this.dy = dy;
+		this.prevX = x;
+		this.prevY = y;
 		this.isAlive = true;
-		this.tip = new ArrowTip(60, 2);
 	}
 	
 	update(time){
 		if (this.isAlive){
-			if (this.animationStartTime == -1){
-				this.animationStartTime = time;
+			if (this.prevTime == undefined){
+				this.prevTime = time;
 			}
-			var elapsedTimeMs = time - this.animationStartTime;
-			var pixelsPerMs = 640 / 2000;
+			let elapsedTimeMs = time - this.prevTime;
+			this.prevTime = time;
+
 			this.prevX = this.x;
-			this.x = 51 + elapsedTimeMs * pixelsPerMs;
-			if (this.x > 640) {
+			this.prevY = this.y;
+
+			this.x += elapsedTimeMs * this.dx;
+			this.y += elapsedTimeMs * this.dy;
+
+			if ( this.x < -60 || this.y < -60 || this.x > 640 || this.y > 480) {
 				this.isAlive = false;
 			}
 		}
 	}
 	
 	draw(ctx){	
-		ctx.drawImage(this.arrowSprite, this.x, this.y);
+		ctx.save();
+		ctx.translate(this.x, this.y);
+		ctx.rotate(Math.atan2(-this.dy, -this.dx));
+
+		ctx.strokeStyle = "#000000";
+		ctx.beginPath();
+		ctx.moveTo(2,  0);
+		ctx.lineTo(51, 0);
+		ctx.stroke();
+
+		ctx.strokeStyle = "#C0C0C0";
+		ctx.beginPath();
+		ctx.moveTo(0, 0);
+		ctx.lineTo(2, 0);
+		ctx.stroke();
+
+		ctx.strokeStyle = "#FF0000";
+		ctx.beginPath();
+		ctx.moveTo(42, -2);
+		ctx.lineTo(49, -2);
+		ctx.moveTo(42, -1);
+		ctx.lineTo(49, -1);
+		ctx.stroke();
+
+		ctx.beginPath();
+		ctx.moveTo(42, 2);
+		ctx.lineTo(49, 2);
+		ctx.moveTo(42, 1);
+		ctx.lineTo(49, 1);
+		ctx.stroke();
+		ctx.restore();
 	}
 	
 	collidesWith(left,right,top,bottom){
-		let tipX = this.x + this.tip.x;
-		let prevTipX = this.prevX + this.tip.x;
-		let collided = (this.y + this.tip.y >= top && this.y + this.tip.y <= bottom && prevTipX <= right && tipX >= left);
+		//this formula works for horizontal movement, but what about diagonal?
+		let collided = (this.y >= top && this.y <= bottom && this.prevX <= right && this.x >= left);
 		
 		return collided;
 	}
 }
 
 class ArrowManager{
-	constructor(arrowSprite, destroyArrowOnCollision){	
+	constructor(){	
 		this.arrows = [];
-		this.arrowSprite = arrowSprite;
-		this.destroyArrowOnCollision = destroyArrowOnCollision;
 	}
 	
 	createArrow(y){
-		var arrow = new Arrow(y, this.arrowSprite, this.destroyArrowOnCollision);
+		let arrow = new Arrow(51+60, y, 640 / 2000, 0);
 		this.arrows.push(arrow);
 	}
 	
@@ -70,10 +102,6 @@ class ArrowManager{
 		}
 	}
 	
-	collidesWith(l, r, t, b){
-		return this.arrows.reduce((accumulator, arrow) => accumulator || arrow.collidesWith(l, r, t, b), false);
-	}
-	
 	getCollidingArrow(l, r, t, b){
 		for (let arrow of this.arrows){
 			if (arrow.collidesWith(l, r, t, b)){
@@ -81,6 +109,10 @@ class ArrowManager{
 			}
 		}
 		return null;
+	}
+
+	collidesWith(l, r, t, b){
+		return this.getCollidingArrow(l, r, t, b) != null;
 	}
 	
 	destroyArrow(arrow){

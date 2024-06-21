@@ -81,10 +81,11 @@ class PeriodicEvent{
 }
 
 class Projectile{
-	constructor(x, y, dx, sprite){
+	constructor(x, y, dx, dy, sprite){
         this.x = x;
         this.y = y;
         this.dx = dx;
+		this.dy = dy;
         this.sprite = sprite;
         this.collisionRect = {left: 0, right: 26, top: 0, bottom: 26};
 		this.isAlive = true;
@@ -96,6 +97,7 @@ class Projectile{
 		}
 		let dt = time - this.previousEventTime;
 		this.x += this.dx * dt;
+		this.y += this.dy * dt;
 		this.previousEventTime = time;
 		if (this.x < -37){
 			this.isAlive = false;
@@ -143,7 +145,7 @@ class BerserkLevel{
             var arrow = berserk.checkCollisions(this.arrowManager);
 			if (arrow){
 				if (berserk.state == BerserkState.Walking){
-					this.projectiles.push(new Projectile(berserk.x - 40, berserk.y + 20, -0.2, this.sprites[2]));
+					this.projectiles.push(new Projectile(berserk.x - 40, berserk.y + 20, -0.2, 0.0, this.sprites[2]));
 				}
 
 				berserk.hit();
@@ -195,6 +197,7 @@ class BerserkLevel{
 	}
 	
     mousemove(x, y){
+		if (this.gameIsLost) return;
 		this.archer.move(y);		
 	}
 	
@@ -213,6 +216,7 @@ class BerserkLevel{
 	}
 
 	touchmove(x, y){
+		if (this.gameIsLost) return;
 		this.archer.move(y);
 		if ( x - this.touchStartLoc.x < -30){
 			this.archer.stretchFull();

@@ -1,8 +1,8 @@
 class TargetLevel{
-	constructor(targetSprite, arrowSprite, archer, arrowManager){	
+	constructor(targetSprite, archer, arrowManager){	
 		this.archer = archer;
 		this.arrowManager = arrowManager;		
-		this.target = new Target(580, 400, 480/5000, targetSprite, arrowSprite);
+		this.target = new Target(580, 400, 480/5000, targetSprite);
 	}
 	
 	update(time){

@@ -19,6 +19,7 @@
 <script src="darkforest.js"></script>
 <script src="fairylevel.js"></script>
 <script src="berserklevel.js"></script>
+<script src="outpost.js"></script>
 
 <script>
 
@@ -74,7 +75,7 @@ function loadSprites(onLoadCompletion, onLoadProgress){
 
 function initLevels(){
 	
-	let arrowManager = new ArrowManager(sprites[4], false);
+	let arrowManager = new ArrowManager();
 	
 	let archer = new Archer(
 	  (y) => arrowManager.createArrow(y)	  
@@ -97,7 +98,7 @@ function initLevels(){
 	levels.push(new ScrollLevel(sprites[32], "SLIMED\n\nThe greatful butterflies tell of an evil imprisonment spell cast by The Black Archer, The greatest archer in all the Land!\nGreatest? Hah! you snicker.  The Quest begins.  In your path: the SWAMP... "));
 	levels.push(new SpawnableEnemyLevel([sprites[11]], [sprites[12]], slimeCollisionRect, 100, 1300, 2, archer, arrowManager, new Velocity(640 / 5000, 0)));
 	levels.push(new ScrollLevel(sprites[32], "Bulls Eye\n\nAs the Quest proceeds you will be tested for speed, cunning, and accuracy.\n\nThe tests begin!\nYou Need a Bull's Eye to Continue... "));
-	levels.push(new TargetLevel(sprites[5], sprites[4], archer, arrowManager));
+	levels.push(new TargetLevel(sprites[5], archer, arrowManager));
 	levels.push(new ScrollLevel(sprites[32], "FIREBALLS\n\nNice Shot!\nSuddenly you hear an earth shattering raport.  The hillside nearest you explodes into thousands of flaming lava rocks, many of which are heading straight for you. No time to seek shelter... "));
 	levels.push(new SpawnableEnemyLevel([sprites[18], sprites[19]], [sprites[20]], fireballCollisionRect, 100, 1500, 2, archer, arrowManager, new Velocity(640 / 5000, 0)));	
 	levels.push(new ScrollLevel(sprites[32], "Unfriendly Skies\n\nThinking those rocks may have been meant for you, you decide to send a message to your friend Khanin the Wizard.  A passing dove agrees to deliver your message.  Just then the skies went BLACK... "));
@@ -123,8 +124,8 @@ function initLevels(){
 	levels.push(new FairyLevel(sprites[16], sprites[14], sprites[17], sprites[39], sprites[40], sprites[41], archer, arrowManager));
 	levels.push(new ScrollLevel(sprites[32], "Berserk\n\nDriven mad by the guiles of the Black Archer, the Barbarians from the North attack in droves. Experts in the use of many weapons, they are a powerful opponent..."));	
 	levels.push(new BerserkLevel(sprites[49], sprites[50], sprites[51],archer, arrowManager));	
-
-	//levels.push(new ScrollLevel(sprites[32], "Outpost\n\nYou are deep into the Black Archer's territory now as you stumble into an outpost armed with heavy artillery.  Behind the catapult You notice a large rodent, seemingly in a trance... "));	
+	levels.push(new ScrollLevel(sprites[32], "Outpost\n\nYou are deep into the Black Archer's territory now as you stumble into an outpost armed with heavy artillery.  Behind the catapult You notice a large rodent, seemingly in a trance... "));
+	levels.push(new OutpostLevel([sprites[55],sprites[56],sprites[57],sprites[58],sprites[59],sprites[60],sprites[61],sprites[62]], archer, arrowManager));
 	//levels.push(new ScrollLevel(sprites[32], "Dragons\n\nWith scales as strong as the hardest steel and breath hotter than molten lava, the oldest of the land's creatures is a most powerful enemy.\nYour arrows won't find many chinks in this beasts armor... "));
 	//levels.push(new ScrollLevel(sprites[32], "Bulls Eye\n\nSimple target practice for a seasoned archer like yourself.  Getting a Bulls Eye is as good as done... "));
 	//levels.push(new ScrollLevel(sprites[32], "Night Predators\n\nThese quick and agile creatures can out maneuver the most capable hunter. ... "));
@@ -133,9 +134,7 @@ function initLevels(){
 	//levels.push(new ScrollLevel(sprites[32], "Imperial Guards\n\nThe Imperial Guards are blocking your way.\nLoathesome creatures; half man - half beast.  They possess great strength and a unique weapon..."));
 	//levels.push(new ScrollLevel(sprites[32], "Bulls Eye\n\nTime for your favorite level, with a twist. All you have to do is hit Blue or Yellow on the Target to proceed.\n\nOh yes,\nthe arrow must also pass through the golden ring..."));
 	//levels.push(new ScrollLevel(sprites[32], "The Duel\nFinally, we meet face to face.\nBEWARE!\nYour magic feathers are no good here.  The Black Archer is quick and cunning.  No one has ever survived the Duel.\nTwo enter the Arena, Only One returns...\n\nGood Luck"));
-	levels.push(new ScrollLevel(sprites[32], "Bow and Arrow\nIn Search of\nthe Greatest Archer\n\n the Black archer has been defeated!  His Legacy of curruption and treachery is at an end.\nYou are\nTHE GREATEST ARCHER"));
-	
-
+	levels.push(new ScrollLevel(sprites[32], "Bow and Arrow\nIn Search of\nthe Greatest Archer\n\n the Black archer has been defeated!  His Legacy of curruption and treachery is at an end.\nYou are\nTHE GREATEST ARCHER"));	
 	levels.push(new ScrollLevel(sprites[32], "Bow and Arrow\n\nversion 1.0 Abridged\nApril 1992 John Di Troia"));
 	
 	
@@ -236,6 +235,8 @@ function render(time){
 			level = new ScrollLevel(sprites[32], "\n\n---ZAP---\nWatch out for the GUARDIANS\n\nThe End");
 		}else if (levelId == 23){
 			level = new ScrollLevel(sprites[32], "\n\nThe barbarians celebrate their victory by perching your head on a pike.\n\nThe End");
+		}else if (levelId == 25){
+			level = new ScrollLevel(sprites[32], "\n\nWhy that\nDIRTY RAT!\n\nThe End");
 		}
 		initLevels();
 		levelId = -1;

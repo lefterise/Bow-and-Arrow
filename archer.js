@@ -56,7 +56,7 @@ class Archer{
 		if (this.state == ArcherState.Arming || this.state == ArcherState.Armed){
 			this.state = ArcherState.Idle;
 			this.sprite = this.sprites.Idle;
-			this.fire(this.y + 59);
+			this.fire(this.y + 61);
 		}
 		if (this.state == ArcherState.Manual){
 			this.state = ArcherState.Loaded;
