@@ -86,9 +86,10 @@ class Archer{
 		return this.x + this.collisionRect.left < right
 			&& this.x + this.collisionRect.right > left
 			&& this.y + this.collisionRect.top <=bottom
-			&& this.y + this.collisionRect.bottom >= top;
-			
-			 
-			
+			&& this.y + this.collisionRect.bottom >= top;		
+	}
+
+	collidesWithArrow(arrowManager){
+		return arrowManager.getCollidingArrow(this.x + this.collisionRect.left, this.x + this.collisionRect.right, this.y + this.collisionRect.top, this.y + this.collisionRect.bottom);
 	}
 }

@@ -6,7 +6,7 @@ class Catapult{
         this.frame = 1;
         this.callback = callback;
         this.collisionRect = {left: 8, right: 99, top: 45, bottom: 115};
-		this.deflectionRect = {left: 4, right: 11, top: 57, bottom: 64};
+		this.deflectionRect = {left: 4, right: 11, top: 56, bottom: 65};
     }
 
     update(time){
@@ -38,6 +38,62 @@ class Catapult{
 	}
 }
 
+class Pot{
+	constructor(x, dx, minX, maxX, sprite){
+		this.x = x;
+		this.minX = minX;
+		this.maxX = maxX;
+		this.dx = dx;
+		this.sprite = sprite;
+		this.collisionRect = {left: 3, right: 31, top: 15, bottom: 51};
+	}
+
+	update(time){
+		if (this.prevTime == undefined){
+			this.prevTime = time;
+		}
+		let dt = time - this.prevTime;
+		this.prevTime = time;
+
+		this.x += this.dx * dt;
+		
+		if (this.x > this.maxX){
+			this.x = this.maxX;
+			this.dx = -Math.abs(this.dx);
+		}
+
+		if (this.x < this.minX){
+			this.x = this.minX;
+			this.dx = Math.abs(this.dx);
+		}
+	}
+
+	draw(ctx){
+	    ctx.drawImage(this.sprite, this.x, 0);
+	}
+
+	checkCollisions(arrowManager){
+		return arrowManager.getCollidingArrow(this.x + this.collisionRect.left, this.x + this.collisionRect.right, 0 + this.collisionRect.top, 0 + this.collisionRect.bottom);
+	}	
+}
+
+class Rat{
+	constructor(x, y, sprite){
+		this.x = x;
+		this.y = y;
+		this.sprite = sprite;
+		this.collisionRect = {left: 0, right: 61, top: 0, bottom: 57};
+	}
+
+	draw(ctx){
+	    ctx.drawImage(this.sprite, this.x, this.y);
+	}
+
+	checkCollisions(arrowManager){
+		return arrowManager.getCollidingArrow(this.x + this.collisionRect.left, this.x + this.collisionRect.right, this.y + this.collisionRect.top, this.y + this.collisionRect.bottom);
+	}	
+}
+
 class OutpostLevel{
     constructor(sprites, archer, arrowManager){	
         this.sprites = sprites;
@@ -45,6 +101,9 @@ class OutpostLevel{
         this.arrowManager = arrowManager;
         this.catapult = new Catapult(this.sprites, 410, 306, ()=>{ this.throwRock()});
         this.projectiles = [];
+		this.pot = new Pot(490,200/4000,400,600,sprites[0]);
+		this.rat = new Rat(570, 360, sprites[3])
+		this.levelCompleted = false;
     }
     
     createRock(){
@@ -68,16 +127,37 @@ class OutpostLevel{
 		this.archer.update(time);		
 		this.arrowManager.update(time);
         this.catapult.update(time);
+		this.pot.update(time);
 
-		let arrow1 = this.catapult.checkDeflections(this.arrowManager);
-		if (arrow1){
-			arrow1.dx =   200 / 2000;
-			arrow1.dy = - 600 / 2000;
-			arrow1.dodjedCatapult = true;
+		let arrowThatHitPot = this.pot.checkCollisions(this.arrowManager);
+		if (arrowThatHitPot && !arrowThatHitPot.hadHitThePotBefore){						
+			
+			if (arrowThatHitPot.wasDeflecterByCatapultBefore){
+				arrowThatHitPot.dy = -arrowThatHitPot.dy;
+			}else{
+				arrowThatHitPot.dx = -arrowThatHitPot.dx;				
+			}
+
+			//since we are reflecting (either in x or y) move time forward by 2 * arrow length such that the tip goes to where the butt of the arrow was
+			arrowThatHitPot.x += arrowThatHitPot.dx * 2 * 51;
+			arrowThatHitPot.y += arrowThatHitPot.dy * 2 * 51;
+
+			arrowThatHitPot.hadHitThePotBefore = true;
+		}
+
+		let arrowThatGotDeflectedByCatapult = this.catapult.checkDeflections(this.arrowManager);
+		if (arrowThatGotDeflectedByCatapult){
+			arrowThatGotDeflectedByCatapult.dx =   180 / 2000;
+			arrowThatGotDeflectedByCatapult.dy = - 620 / 2000;
+
+			arrowThatGotDeflectedByCatapult.x += arrowThatGotDeflectedByCatapult.dx * 2 * 51;
+			arrowThatGotDeflectedByCatapult.y += arrowThatGotDeflectedByCatapult.dy * 2 * 51;
+
+			arrowThatGotDeflectedByCatapult.wasDeflecterByCatapultBefore = true;
 		}
 
         let arrow = this.catapult.checkCollisions(this.arrowManager);
-        if (arrow && !arrow.dodjedCatapult){
+        if (arrow && !arrow.wasDeflecterByCatapultBefore){
             this.arrowManager.destroyArrow(arrow)
         }
 
@@ -89,10 +169,15 @@ class OutpostLevel{
 				this.arrowManager.destroyArrow(arrow)
 			}
 
-			if (projectile.checkCollisionWithArcher(this.archer)){
-				//this.gameIsLost = true;
-				//this.timeOfArcherDeath = time;
+			if (projectile.checkCollisionWithArcher(this.archer) || this.archer.collidesWithArrow(this.arrowManager)){
+				this.gameIsLost = true;
+				this.timeOfArcherDeath = time;
 			}
+		}
+
+		let ratWasHit = this.rat.checkCollisions(this.arrowManager);
+		if (ratWasHit){
+			this.levelCompleted = true;
 		}
     }
 
@@ -103,11 +188,12 @@ class OutpostLevel{
 		for (let projectile of this.projectiles){
 			projectile.draw(ctx);
 		}
-        ctx.drawImage(this.sprites[3], 540, 360);
+		this.pot.draw(ctx);
+        this.rat.draw(ctx);
 	}
 
 	isComplete(){
-		return false;
+		return this.levelCompleted;
 	}
 	
 	isLost(){
