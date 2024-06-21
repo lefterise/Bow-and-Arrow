@@ -168,6 +168,11 @@ function start(){
 	});
 	
     canvas.addEventListener('touchstart', function(e){
+		if (canvas.requestFullscreen && document.fullscreenElement != canvas){                
+			canvas.requestFullscreen();
+			screen.orientation.lock("landscape");
+		}
+
         var touchobj = e.changedTouches[0];
 		var rect = canvas.getBoundingClientRect();
         

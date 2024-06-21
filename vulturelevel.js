@@ -48,23 +48,14 @@ class VultureLevel{
 	}
 
 	touchmove(x, y){
-		this.archer.move(y);
-		if ( x - this.touchStartLoc.x < -30){
-			this.archer.stretchFull();
-		} else if ( x - this.touchStartLoc.x < -15){
-			this.archer.stretchALittle();
-		} else{
-			this.archer.relax();
-		}
-
+		this.spawnableLevel.touchmove(x, y);
 	}
 	
 	touchstart(x, y){
-		this.touchStartLoc = {x: x, y: y};
-		this.archer.load();
+		this.spawnableLevel.touchstart(x, y);
 	}
 	
 	touchend(x, y){
-		this.archer.release();
+		this.spawnableLevel.touchend(x, y);
 	}	
 }
