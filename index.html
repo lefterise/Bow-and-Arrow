@@ -20,6 +20,7 @@
 <script src="fairylevel.js"></script>
 <script src="berserklevel.js"></script>
 <script src="outpost.js"></script>
+<script src="dragon.js"></script>
 
 <script>
 
@@ -127,6 +128,8 @@ function initLevels(){
 	levels.push(new ScrollLevel(sprites[32], "Outpost\n\nYou are deep into the Black Archer's territory now as you stumble into an outpost armed with heavy artillery.  Behind the catapult You notice a large rodent, seemingly in a trance... "));
 	levels.push(new OutpostLevel([sprites[55],sprites[56],sprites[57],sprites[58],sprites[59]], archer, arrowManager));
 	levels.push(new ScrollLevel(sprites[32], "Dragons\n\nWith scales as strong as the hardest steel and breath hotter than molten lava, the oldest of the land's creatures is a most powerful enemy.\nYour arrows won't find many chinks in this beasts armor... "));
+	levels.push(new DragonLevel([sprites[52],sprites[53],sprites[54]], archer, arrowManager));
+	
 	//levels.push(new ScrollLevel(sprites[32], "Bulls Eye\n\nSimple target practice for a seasoned archer like yourself.  Getting a Bulls Eye is as good as done... "));
 	//levels.push(new ScrollLevel(sprites[32], "Night Predators\n\nThese quick and agile creatures can out maneuver the most capable hunter. ... "));
 	//levels.push(new ScrollLevel(sprites[32], "Demons\n\nThe most vile of the Black Archer's minions.  None have ever faced this spawn of the shadows and lived to tell.  Your arrows seem to have no effect on this darkling... "));

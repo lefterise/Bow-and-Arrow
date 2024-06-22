@@ -169,7 +169,7 @@ class OutpostLevel{
 				this.arrowManager.destroyArrow(arrow)
 			}
 
-			if (projectile.checkCollisionWithArcher(this.archer) || this.archer.collidesWithArrow(this.arrowManager)){
+			if (projectile.checkCollisionWithArcher(this.archer)){
 				this.gameIsLost = true;
 				this.timeOfArcherDeath = time;
 			}
@@ -178,6 +178,11 @@ class OutpostLevel{
 		let ratWasHit = this.rat.checkCollisions(this.arrowManager);
 		if (ratWasHit){
 			this.levelCompleted = true;
+		}
+
+		if (this.archer.collidesWithArrow(this.arrowManager)){
+			this.gameIsLost = true;
+			this.timeOfArcherDeath = time;
 		}
     }
 

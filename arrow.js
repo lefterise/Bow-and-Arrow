@@ -67,6 +67,11 @@ class Arrow{
 		ctx.moveTo(42, 1);
 		ctx.lineTo(49, 1);
 		ctx.stroke();
+
+		if (this.drawAttachment){
+			this.drawAttachment(ctx);
+		}
+		
 		ctx.restore();
 	}
 	
