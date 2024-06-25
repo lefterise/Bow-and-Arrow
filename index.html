@@ -21,6 +21,7 @@
 <script src="berserklevel.js"></script>
 <script src="outpost.js"></script>
 <script src="dragon.js"></script>
+<script src="bat.js"></script>
 
 <script>
 
@@ -83,11 +84,11 @@ function initLevels(){
 	, {Idle: sprites[3], Loaded: sprites[0], Arming: sprites[1], Armed: sprites[2]}
     );
 		
-	var slimeCollisionRect = new CollisionRect(0,44,0,49);
-	var fireballCollisionRect = new CollisionRect(0,60,0,20);
-	var vultureCollisionRect = new CollisionRect(0,54,32,52);
-	var shurikenCollisionRect  = new CollisionRect(0,30,0,32);
-	var pyronianCollisionRect  = new CollisionRect(5,28,0,46);
+	let slimeCollisionRect    = new CollisionRect(0,44,0,49);
+	let fireballCollisionRect = new CollisionRect(0,60,0,20);
+	let shurikenCollisionRect = new CollisionRect(0,30,0,32);
+	let pyronianCollisionRect = new CollisionRect(5,28,0,46);
+	let batCollisionRect      = new CollisionRect(3,20,3,25);
 	levels = [];
 	
 	levels.push(new ScrollLevel(sprites[32], "Target Practice\n\nOur journey begins on the target range.  Target launchers release balloons up range for the archers to shoot.  Your task -\nShoot all of the balloons."));
@@ -97,30 +98,50 @@ function initLevels(){
 	levels.push(new ScrollLevel(sprites[32], "Bouncing Bubbles\n\nHaving had enough target practice for one day, you take a walk.  In a small glade you spy a number of butterflies imprisoned by bubbles.  Taking pity on the little creatures, you decide to free them... "));	
 	levels.push(new ButterflyLevel(sprites[13], sprites[14], sprites[15], archer, arrowManager));
 	levels.push(new ScrollLevel(sprites[32], "SLIMED\n\nThe greatful butterflies tell of an evil imprisonment spell cast by The Black Archer, The greatest archer in all the Land!\nGreatest? Hah! you snicker.  The Quest begins.  In your path: the SWAMP... "));
-	levels.push(new SpawnableEnemyLevel([sprites[11]], [sprites[12]], slimeCollisionRect, 100, 1300, 2, archer, arrowManager, new Velocity(640 / 5000, 0)));
+	let slimeFactory = (x,y) =>{
+		return new SpawnableEnemy(x, y, new Velocity(640 / 5000, 0), [sprites[11]], [sprites[12]], slimeCollisionRect, 100, null, null);
+	}
+	levels.push(new SpawnableEnemyLevel(1300, 2, archer, arrowManager, null, slimeFactory));	
 	levels.push(new ScrollLevel(sprites[32], "Bulls Eye\n\nAs the Quest proceeds you will be tested for speed, cunning, and accuracy.\n\nThe tests begin!\nYou Need a Bull's Eye to Continue... "));
 	levels.push(new TargetLevel(sprites[5], archer, arrowManager));
 	levels.push(new ScrollLevel(sprites[32], "FIREBALLS\n\nNice Shot!\nSuddenly you hear an earth shattering raport.  The hillside nearest you explodes into thousands of flaming lava rocks, many of which are heading straight for you. No time to seek shelter... "));
-	levels.push(new SpawnableEnemyLevel([sprites[18], sprites[19]], [sprites[20]], fireballCollisionRect, 100, 1500, 2, archer, arrowManager, new Velocity(640 / 5000, 0)));	
+	
+	let lavaRockFactory = (x,y) =>{
+		return new SpawnableEnemy(x, y, new Velocity(640 / 5000, 0), [sprites[18], sprites[19]], [sprites[20]], fireballCollisionRect, 100, null, null);
+	}
+	levels.push(new SpawnableEnemyLevel(1500, 2, archer, arrowManager, null, lavaRockFactory));	
+
 	levels.push(new ScrollLevel(sprites[32], "Unfriendly Skies\n\nThinking those rocks may have been meant for you, you decide to send a message to your friend Khanin the Wizard.  A passing dove agrees to deliver your message.  Just then the skies went BLACK... "));
-	var vultureLevel = new VultureLevel(new SpawnableEnemyLevel([sprites[21], sprites[22]], [sprites[23]], vultureCollisionRect, 300, 1800, 1, archer, arrowManager, new Velocity(640 / 5500, 0)));
+	
+	let vultureLevel = new VultureLevel([sprites[21], sprites[22]], [sprites[23]], [sprites[24], sprites[25]], [sprites[25]], archer, arrowManager);
 	levels.push(vultureLevel);	
+	
 	levels.push(new ScrollLevel(sprites[32], "Whrrrrrrrrrr\n\nThe Black Archer is definitely on to you.  His servants are everywhere and will stop at nothing in an effort terminate your existence.  From beyond sight, you here a strange whirring noise... "));	
-	levels.push(new SpawnableEnemyLevel([sprites[33], sprites[34]], [sprites[35]], shurikenCollisionRect, 100, 1500, 2, archer, arrowManager, new Velocity(640 / 5000, 0)));	
+	
+	let bladeFactory = (x,y) =>{
+		return new SpawnableEnemy(x, y, new Velocity(640 / 5000, 0), [sprites[33], sprites[34]], [sprites[35]], shurikenCollisionRect, 100, null, null);
+	}
+	levels.push(new SpawnableEnemyLevel( 1500, 2, archer, arrowManager, null, bladeFactory));	
+	
 	levels.push(new ScrollLevel(sprites[32], "Dark Forest\n\nAs you wind your way along the path unseen eyes are glaring at you.  When you reach the edge of a line of trees you are in for nothing but trouble...\n\nI hope the Message Got through to Khanin. "));
 	levels.push(new DarkForest(archer, arrowManager, vultureLevel));
 	levels.push(new ScrollLevel(sprites[32], "Marching Pyronians\n\nThe Pyronians are an ancient race of Fire Walkers. They are invulnerable at their Hottest and they are marching straight for you.  Sometimes its best to get out of their way..."));
-	levels.push(new SpawnableEnemyLevel([sprites[36], sprites[37]], [sprites[38]], pyronianCollisionRect, 400, 2000, 2, archer, arrowManager, new Velocity(640 / 6000, 0),
-	  (animationFrame, enemy)=>{
-		 enemy.isHot = animationFrame == 0;
-	  }, 
-	  (arrow, enemy, level)=>{
+	
+	let pyronianFactory = (x,y) =>{
+		let animationChangeAction = (animationFrame, enemy)=>{
+			 enemy.isHot = animationFrame == 0;
+	  	};
+		return new SpawnableEnemy(x, y, new Velocity(640 / 6000, 0),[sprites[36], sprites[37]], [sprites[38]], pyronianCollisionRect, 400, animationChangeAction, null);
+	}
+
+	let enemyArrowCollisionAction = (arrow, enemy, level)=>{
 		if (enemy.isHot)		
 			level.arrowManager.destroyArrow(arrow)
 		else
 			enemy.die();
-	  }
-	));	
+	};
+	levels.push(new SpawnableEnemyLevel(2000, 2, archer, arrowManager, enemyArrowCollisionAction, pyronianFactory));	
+
 	levels.push(new ScrollLevel(sprites[32], "Imprisoned\n\nStumbling into an open meadow you are shocked at the sight. So the Black Archer was only practicing his evil spells on the Butterflies. He won't get away with this!  Be careful, strange clouds are among the fairies... "));
 	levels.push(new FairyLevel(sprites[16], sprites[14], sprites[17], sprites[39], sprites[40], sprites[41], archer, arrowManager));
 	levels.push(new ScrollLevel(sprites[32], "Berserk\n\nDriven mad by the guiles of the Black Archer, the Barbarians from the North attack in droves. Experts in the use of many weapons, they are a powerful opponent..."));	
@@ -129,9 +150,15 @@ function initLevels(){
 	levels.push(new OutpostLevel([sprites[55],sprites[56],sprites[57],sprites[58],sprites[59]], archer, arrowManager));
 	levels.push(new ScrollLevel(sprites[32], "Dragons\n\nWith scales as strong as the hardest steel and breath hotter than molten lava, the oldest of the land's creatures is a most powerful enemy.\nYour arrows won't find many chinks in this beasts armor... "));
 	levels.push(new DragonLevel([sprites[52],sprites[53],sprites[54]], archer, arrowManager));
-	
-	//levels.push(new ScrollLevel(sprites[32], "Bulls Eye\n\nSimple target practice for a seasoned archer like yourself.  Getting a Bulls Eye is as good as done... "));
-	//levels.push(new ScrollLevel(sprites[32], "Night Predators\n\nThese quick and agile creatures can out maneuver the most capable hunter. ... "));
+	levels.push(new ScrollLevel(sprites[32], "Bulls Eye\n\nSimple target practice for a seasoned archer like yourself.  Getting a Bulls Eye is as good as done... "));
+	levels.push(new TargetLevel(sprites[5], archer, arrowManager));
+	levels.push(new ScrollLevel(sprites[32], "Night Predators\n\nThese quick and agile creatures can out maneuver the most capable hunter. ... "));
+
+	let batFactory = (x,y) =>{
+		return new Bat(x, y, new Velocity(-640 / 6000, -480 / 8000), [sprites[63], sprites[64]], [sprites[65]], batCollisionRect, 400, null, null,75);
+	}
+	levels.push(new SpawnableEnemyLevel(2000, 2, archer, arrowManager, null, batFactory));
+
 	//levels.push(new ScrollLevel(sprites[32], "Demons\n\nThe most vile of the Black Archer's minions.  None have ever faced this spawn of the shadows and lived to tell.  Your arrows seem to have no effect on this darkling... "));
 	//levels.push(new ScrollLevel(sprites[32], "Harpies\n\nAttacking in unison, a small band of harpies attempt to foil your quest for the Black Archer. Their small arrows mean instant death ... "));
 	//levels.push(new ScrollLevel(sprites[32], "Imperial Guards\n\nThe Imperial Guards are blocking your way.\nLoathesome creatures; half man - half beast.  They possess great strength and a unique weapon..."));
@@ -154,11 +181,11 @@ const lossMessage = {
 	23: "\n\nThe barbarians celebrate their victory by perching your head on a pike.",
 	25: "\n\n\nWhy that\nDIRTY RAT!",
 	27: "\n\nRoasted and devoured\nYou made a fine appetizer for the winged beast.",
-	29: "\n\n\n\nWho says BATS are blind.",
-	31: "\n\n\n\nDon't try to look him in the Eyes!",
-	33: "\n\n\n\nThe Harpies frolic with glee over your fallen body.",
-	35: "\n\n\n\nThe Energy ORBS are unstoppable.",
-	37: "\n\n\n\nThe Black Archer is STILL the Greatest Archer in all the Land"
+	31: "\n\n\n\nWho says BATS are blind.",
+	33: "\n\n\n\nDon't try to look him in the Eyes!",
+	35: "\n\n\n\nThe Harpies frolic with glee over your fallen body.",
+	37: "\n\n\n\nThe Energy ORBS are unstoppable.",
+	39: "\n\n\n\nThe Black Archer is STILL the Greatest Archer in all the Land"
 };
 
 function start(){	

@@ -1,23 +1,18 @@
 class SpawnableEnemyLevel{
-	constructor(aliveSprites, deadSprites, collisionRect, animationSpeed, spawnRateMs, rows, archer, arrowManager, enemyVelocity, animationFrameChangedCallback, arrowEnemyCollisionCallback){	
+	constructor(spawnRateMs, rows, archer, arrowManager, arrowEnemyCollisionCallback, enemyFactory){	
 		this.archer = archer;
 		this.arrowManager = arrowManager;
 		this.enemies = [];
-		this.aliveSprites = aliveSprites;
-		this.deadSprites = deadSprites;
 		this.levelStartTime = -1;
 		this.timeElapsed = 0;
 		this.previousSpawnTime = -1;
 		this.timeOfArcherDeath = -1;
 		this.timeSinceArcherDeath = -1;
 		this.gameIsLost = false;
-		this.collisionRect = collisionRect;
-		this.animationSpeed = animationSpeed;
 		this.spawnRateMs = spawnRateMs;
 		this.rows = rows;
-		this.numEscaped = 0;
-		this.enemyVelocity = enemyVelocity;
-		this.animationFrameChangedCallback = animationFrameChangedCallback;
+		this.createEnemy = enemyFactory;
+		
 		this.arrowEnemyCollisionCallback = arrowEnemyCollisionCallback;
 
 		if (this.arrowEnemyCollisionCallback == undefined){
@@ -48,7 +43,7 @@ class SpawnableEnemyLevel{
 			var rowHeight = 380 / this.rows;
 			var rowSpace = 10;
 			for (var row = 0; row < this.rows; ++row){
-				this.enemies.push(new SpawnableEnemy(640, 10 + (rowHeight + rowSpace) * row + rowHeight * Math.random(), this.enemyVelocity, this.aliveSprites, this.deadSprites, this.collisionRect, this.animationSpeed, this.animationFrameChangedCallback, (enemy)=>{ this.numEscaped++;}));
+				this.enemies.push(this.createEnemy(640, 10 + (rowHeight + rowSpace) * row + rowHeight * Math.random()));
 			}
 						
 			this.previousSpawnTime = second;
