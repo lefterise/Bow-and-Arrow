@@ -22,6 +22,7 @@
 <script src="outpost.js"></script>
 <script src="dragon.js"></script>
 <script src="bat.js"></script>
+<script src="demon.js"></script>
 
 <script>
 
@@ -158,8 +159,9 @@ function initLevels(){
 		return new Bat(x, y, new Velocity(-640 / 6000, -480 / 8000), [sprites[63], sprites[64]], [sprites[65]], batCollisionRect, 400, null, null,75);
 	}
 	levels.push(new SpawnableEnemyLevel(2000, 2, archer, arrowManager, null, batFactory));
+	levels.push(new ScrollLevel(sprites[32], "Demons\n\nThe most vile of the Black Archer's minions.  None have ever faced this spawn of the shadows and lived to tell.  Your arrows seem to have no effect on this darkling... "));
+	levels.push(new DemonLevel([sprites[71],sprites[73],sprites[74], sprites[75]], archer, arrowManager));
 
-	//levels.push(new ScrollLevel(sprites[32], "Demons\n\nThe most vile of the Black Archer's minions.  None have ever faced this spawn of the shadows and lived to tell.  Your arrows seem to have no effect on this darkling... "));
 	//levels.push(new ScrollLevel(sprites[32], "Harpies\n\nAttacking in unison, a small band of harpies attempt to foil your quest for the Black Archer. Their small arrows mean instant death ... "));
 	//levels.push(new ScrollLevel(sprites[32], "Imperial Guards\n\nThe Imperial Guards are blocking your way.\nLoathesome creatures; half man - half beast.  They possess great strength and a unique weapon..."));
 	//levels.push(new ScrollLevel(sprites[32], "Bulls Eye\n\nTime for your favorite level, with a twist. All you have to do is hit Blue or Yellow on the Target to proceed.\n\nOh yes,\nthe arrow must also pass through the golden ring..."));
