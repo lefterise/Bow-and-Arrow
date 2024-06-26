@@ -4,8 +4,7 @@ class Demon{
         this.y = y;
         this.sprites = sprites;
         this.frame = 0;
-        this.hasFire = false;
-
+  
         this.dy = -0.05;
         this.dx = -0.07;
 

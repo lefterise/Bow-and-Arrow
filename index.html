@@ -23,6 +23,7 @@
 <script src="dragon.js"></script>
 <script src="bat.js"></script>
 <script src="demon.js"></script>
+<script src="harpies.js"></script>
 
 <script>
 
@@ -162,7 +163,8 @@ function initLevels(){
 	levels.push(new ScrollLevel(sprites[32], "Demons\n\nThe most vile of the Black Archer's minions.  None have ever faced this spawn of the shadows and lived to tell.  Your arrows seem to have no effect on this darkling... "));
 	levels.push(new DemonLevel([sprites[71],sprites[73],sprites[74], sprites[75]], archer, arrowManager));
 
-	//levels.push(new ScrollLevel(sprites[32], "Harpies\n\nAttacking in unison, a small band of harpies attempt to foil your quest for the Black Archer. Their small arrows mean instant death ... "));
+	levels.push(new ScrollLevel(sprites[32], "Harpies\n\nAttacking in unison, a small band of harpies attempt to foil your quest for the Black Archer. Their small arrows mean instant death ... "));
+	levels.push(new HarpyLevel([sprites[76],sprites[77],sprites[78], sprites[79]], archer, arrowManager));
 	//levels.push(new ScrollLevel(sprites[32], "Imperial Guards\n\nThe Imperial Guards are blocking your way.\nLoathesome creatures; half man - half beast.  They possess great strength and a unique weapon..."));
 	//levels.push(new ScrollLevel(sprites[32], "Bulls Eye\n\nTime for your favorite level, with a twist. All you have to do is hit Blue or Yellow on the Target to proceed.\n\nOh yes,\nthe arrow must also pass through the golden ring..."));
 	//levels.push(new ScrollLevel(sprites[32], "The Duel\nFinally, we meet face to face.\nBEWARE!\nYour magic feathers are no good here.  The Black Archer is quick and cunning.  No one has ever survived the Duel.\nTwo enter the Arena, Only One returns...\n\nGood Luck"));
