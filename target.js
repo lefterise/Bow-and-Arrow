@@ -13,18 +13,24 @@ class Target{
 		this.state = TargetState.Intact;
 		this.targetSprite = targetSprite;
 		this.stuckArrows = [];
-
-		this.arrowTemplate = new Arrow(0,0,1,0);
+		this.bullseyeRadius = 3;
+		this.arrowTemplate = new Arrow(0,0,1,0);		
 	}
 	
 	checkCollisions(arrowManager){		
-		if (this.state != TargetState.Dead && arrowManager.collidesWith(this.x + 33, this.x + 49, this.y + 24, this.y + 29)){
-			this.state = TargetState.Dying;
-			this.hitTime = -1;
+		if (this.state == TargetState.Dead)
+			return;
+
+		let arrow = arrowManager.getCollidingArrow(this.x + 33, this.x + 49, this.y + 26 - this.bullseyeRadius, this.y + 26 + this.bullseyeRadius);
+		if (arrow){
+			if (this.requiredColor == undefined || arrow.color == this.requiredColor){
+				this.state = TargetState.Dying;
+				this.hitTime = -1;
+			}
 		}
 		if (this.state != TargetState.Dead && arrowManager.collidesWith(this.x + 33, this.x + 49, this.y + 7, this.y + 46)){
 			let arrow = arrowManager.getCollidingArrow(this.x + 33, this.x + 49, this.y + 7, this.y + 46);
-			this.stuckArrows.push(arrow.y - this.y);
+			this.stuckArrows.push({offsetY: arrow.y - this.y, color: arrow.color});
 			arrowManager.destroyArrow(arrow);
 		}
 	}
@@ -56,9 +62,10 @@ class Target{
 	
 	draw(ctx){
 		ctx.drawImage(this.targetSprite, this.x, this.y);
-		for (let arrowYDelta of this.stuckArrows){
+		for (let arrow of this.stuckArrows){
 			this.arrowTemplate.x = this.x + 39;
-			this.arrowTemplate.y = this.y + arrowYDelta;
+			this.arrowTemplate.y = this.y + arrow.offsetY;
+			this.arrowTemplate.color = arrow.color;
 			this.arrowTemplate.draw(ctx);
 		}
 	}

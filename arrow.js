@@ -14,6 +14,7 @@ class Arrow{
 		this.prevX = x;
 		this.prevY = y;
 		this.isAlive = true;
+		this.color = "#000000";
 	}
 	
 	update(time){
@@ -41,7 +42,7 @@ class Arrow{
 		ctx.translate(this.x, this.y);
 		ctx.rotate(Math.atan2(-this.dy, -this.dx));
 
-		ctx.strokeStyle = "#000000";
+		ctx.strokeStyle = this.color;
 		ctx.beginPath();
 		ctx.moveTo(2,  0);
 		ctx.lineTo(51, 0);
