@@ -26,6 +26,7 @@
 <script src="harpies.js"></script>
 <script src="imperialguards.js"></script>
 <script src="goldenringlevel.js"></script>
+<script src="blackarcherlevel.js"></script>
 
 <script>
 
@@ -171,9 +172,10 @@ function initLevels(){
 	levels.push(new ImperialGuardLevel([sprites[66],sprites[67],sprites[68],sprites[69],sprites[70]], archer, arrowManager));
 	levels.push(new ScrollLevel(sprites[32], "Bulls Eye\n\nTime for your favorite level, with a twist. All you have to do is hit Blue or Yellow on the Target to proceed.\n\nOh yes,\nthe arrow must also pass through the golden ring..."));
 	levels.push(new GoldenRingLevel(sprites[5], sprites[80], archer, arrowManager));	
-	//levels.push(new ScrollLevel(sprites[32], "The Duel\nFinally, we meet face to face.\nBEWARE!\nYour magic feathers are no good here.  The Black Archer is quick and cunning.  No one has ever survived the Duel.\nTwo enter the Arena, Only One returns...\n\nGood Luck"));
+	levels.push(new ScrollLevel(sprites[32], "The Duel\nFinally, we meet face to face.\nBEWARE!\nYour magic feathers are no good here.  The Black Archer is quick and cunning.  No one has ever survived the Duel.\nTwo enter the Arena, Only One returns...\n\nGood Luck"));
+	levels.push(new BlackArcherLevel([sprites[42], sprites[43], sprites[44], sprites[45]], archer, arrowManager));
 	levels.push(new ScrollLevel(sprites[32], "Bow and Arrow\nIn Search of\nthe Greatest Archer\n\n the Black archer has been defeated!  His Legacy of curruption and treachery is at an end.\nYou are\nTHE GREATEST ARCHER"));	
-	levels.push(new ScrollLevel(sprites[32], "Bow and Arrow\n\nversion 1.0 Abridged\nApril 1992 John Di Troia"));		
+	levels.push(new ScrollLevel(sprites[32], "Bow and Arrow\n\nversion 1.0 Abridged\nApril 1992 John Di Troia"));
 }
 
 const lossMessage = {
@@ -318,7 +320,7 @@ function render(time){
 <canvas id="MyCanvas" width="640" height="480" style="border:1px solid #000000; background-color:#000000;"></canvas><br/>
 </div>
 <br/>
-<a href="#" onclick="levelId = (levelId + 1) % levels.length; level = levels[levelId];">skip</a>
+<a href="#" onclick="levelId = (levelId + 1) % levels.length; level = levels[levelId];">skip level</a>
 <!--img src = "https://lefterise.github.io/Bow-and-Arrow/sprites/screenshot.png" hidden></img-->	
 </body>
 </html>
