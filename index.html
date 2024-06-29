@@ -1,6 +1,7 @@
 <html>
 <head>
 <meta property = "og:image" content = "https://lefterise.github.io/Bow-and-Arrow/sprites/screenshot.png" />
+<script src="score.js"></script>
 <script src="archer.js"></script>
 <script src="arrow.js"></script>
 <script src="balloon.js"></script>
@@ -27,7 +28,16 @@
 <script src="imperialguards.js"></script>
 <script src="goldenringlevel.js"></script>
 <script src="blackarcherlevel.js"></script>
-
+<style>
+	canvas.no_selection {		
+		-webkit-touch-callout: none; /* iOS Safari */
+		-webkit-user-select: none; /* webkit (safari, chrome) browsers */
+		-khtml-user-select: none; /* webkit (konqueror) browsers */
+		-moz-user-select: none; /* mozilla browsers */		
+		-ms-user-select: none; /* IE10+ */
+		user-select: none; /* standard syntax */
+	}
+</style>
 <script>
 
 class CollisionRect{
@@ -50,6 +60,7 @@ var level;
 var levels = [];
 var levelId = 0;
 var sprites = loadSprites(start);
+var score = new Score();
 
 function loadSprites(onLoadCompletion, onLoadProgress){
 	var sprites = [];
@@ -195,7 +206,7 @@ const lossMessage = {
 	33: "\n\n\n\nDon't try to look him in the Eyes!",
 	35: "\n\n\n\nThe Harpies frolic with glee over your fallen body.",
 	37: "\n\n\n\nThe Energy ORBS are unstoppable.",
-	39: "\n\n\n\nThe Black Archer is STILL the Greatest Archer in all the Land"
+	41: "\n\n\nThe Black Archer is STILL the Greatest Archer in all the Land"
 };
 
 function start(){	
@@ -212,15 +223,18 @@ function start(){
 		x = evt.clientX - rect.left;
 		y = evt.clientY - rect.top;
 		
-		level.mousemove(x, y);		
+		level.mousemove(x, y);
+		evt.preventDefault();	
 	});
 	
 	canvas.addEventListener('mousedown', function(evt){
-		level.mousedown(evt.button);		
+		level.mousedown(evt.button);
+		evt.preventDefault();
 	});
 	
 	canvas.addEventListener('mouseup', function(evt){
 		level.mouseup(evt.button);
+		evt.preventDefault();
 	});
 	
     canvas.addEventListener('touchstart', function(e){
@@ -282,6 +296,11 @@ function mapToGameCoordinates(canvas, touchobj){
         }
     }
 
+function getTitle(levelId){
+	let msg = levels[levelId].message;
+	return msg.substring(0, msg.indexOf('\n'));
+}
+
 function render(time){
 	level.update(time);
 	
@@ -292,6 +311,9 @@ function render(time){
 			levelId = 0;
 		}
 		level = levels[levelId];
+		if (levelId % 2 == 1){
+			score.changeLevel(getTitle(levelId-1));
+		}
 	}
 
 	if (level.isLost()){
@@ -303,21 +325,28 @@ function render(time){
 	}
 	
 	
-	var canvas = document.getElementById("MyCanvas");
-	var ctx = canvas.getContext("2d");
+	let canvas = document.getElementById("MyCanvas");
+	let ctx = canvas.getContext("2d");
 			
 	//ctx.clearRect(0, 0, 640, 480);
 	ctx.fillStyle = "#008000";
 	ctx.fillRect(0, 0, 640, 480);	
 	ctx.fillStyle = "#000000";
+
 	level.draw(ctx);
 	
+	let scoreCanvas = document.getElementById("ScoreCanvas");
+	let ctxScore = scoreCanvas.getContext("2d");
+	score.draw(ctxScore);
 }
+
+
 
 </script>
 </head>
 <body>
-<canvas id="MyCanvas" width="640" height="480" style="border:1px solid #000000; background-color:#000000;"></canvas><br/>
+<canvas id="ScoreCanvas" width="640" height="46" style="border:1px solid #000000; background-color:#C0C0C0;" class="no_selection"></canvas><br/>
+<canvas id="MyCanvas" width="640" height="480" style="border:1px solid #000000; background-color:#000000;" class="no_selection"></canvas><br/>
 </div>
 <br/>
 <a href="#" onclick="levelId = (levelId + 1) % levels.length; level = levels[levelId];">skip level</a>

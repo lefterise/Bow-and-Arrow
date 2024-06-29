@@ -14,6 +14,7 @@ const ButteflyState = {
           this.bubbleSprite = bubbleSprite;
           this.poppedBubbleSprite = poppedBubbleSprite;
           this.butterflySprite = butterflySprite;
+          this.points = 100;          
       }
       
       checkCollisions(arrowManager){
@@ -22,6 +23,7 @@ const ButteflyState = {
               this.previousUpdateTime = -1;
               this.butterflyX = this.x;
               this.butterflyY = this.y;
+              score.add(this.points);
           }	
       }
       
@@ -35,9 +37,11 @@ const ButteflyState = {
               this.y -= timeSincePrevUpdateMs * this.risePixelsPerMs;
               if (this.y < -50) {
                   this.risePixelsPerMs = -Math.abs(this.risePixelsPerMs);
+                  this.points = Math.max(this.points - 10, 0);
               }
               if (this.y > 480) {
                   this.risePixelsPerMs = Math.abs(this.risePixelsPerMs);
+                  this.points = Math.max(this.points - 10, 0);
               }
           }
           if (this.state == ButteflyState.Poped){

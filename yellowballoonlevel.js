@@ -1,8 +1,3 @@
-const BaloonType = {
-    Red: 0,
-    Yellow: 1,
-  };
-  
   class YellowBaloonLevel{
       constructor(redbaloonSprite, poppedRedBaloonSprite, yellowBaloonSprite, poppedYellowBaloonSprite, archer, arrowManager){	
           this.arrowManager = arrowManager;

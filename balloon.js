@@ -3,6 +3,11 @@ const BaloonState = {
     Poped: 1,
     Dead: 2,
   };
+
+  const BaloonType = {
+    Red: 0,
+    Yellow: 1,
+  };
   
   class Baloon{
       constructor(x, y, risePixelsPerMs, baloonSprite, poppedBaloonSprite, type){
@@ -14,12 +19,14 @@ const BaloonState = {
           this.baloonSprite = baloonSprite;
           this.poppedBaloonSprite = poppedBaloonSprite;
           this.type = type;
+          this.points = (type == BaloonType.Red) ? 100 : -400;
       }
       
       checkCollisions(arrowManager){
           if (this.state == BaloonState.Flying && arrowManager.collidesWith(this.x, this.x + 24, this.y + 6, this.y + 30)){
               this.state = BaloonState.Poped;
               this.previousUpdateTime = -1;
+              score.add(this.points);
           }	
       }
       
@@ -33,6 +40,9 @@ const BaloonState = {
               this.y = this.y - timeSincePrevUpdateMs * this.risePixelsPerMs;
               if (this.y < -50) {
                   this.y = 480;
+                  if (this.type == BaloonType.Red){
+                      this.points = Math.max(this.points - 10, 0);
+                  }
               }
           }
           if (this.state == BaloonState.Poped){

@@ -4,7 +4,7 @@ class BaloonLevel{
 		this.arrowManager = arrowManager;
 		this.baloons = [];
 		for (let i = 0; i < 15; ++i){
-			this.baloons.push(new Baloon(250 + i * 26, 480, 480 / 5000, baloonSprite, poppedBaloonSprite))
+			this.baloons.push(new Baloon(250 + i * 26, 480, 480 / 5000, baloonSprite, poppedBaloonSprite, BaloonType.Red))
 		}
 	}
 	

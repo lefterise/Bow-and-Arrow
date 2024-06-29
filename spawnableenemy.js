@@ -26,6 +26,7 @@ class SpawnableEnemy{
 		this.state = SpawnableEnemyState.Dying;
 		this.timeOfDeath = -1;
 		this.animationFrame = 0;
+		score.add(200);
 	}
 	
 	checkCollisions(arrowManager){
