@@ -238,11 +238,6 @@ function start(){
 	});
 	
     canvas.addEventListener('touchstart', function(e){
-		if (canvas.requestFullscreen && document.fullscreenElement != canvas){
-			canvas.requestFullscreen();
-			screen.orientation.lock("landscape").catch((error) => {});			
-		}
-
         var touchobj = e.changedTouches[0];		
 		let c = mapToGameCoordinates(canvas, touchobj);
 		level.touchstart(c.x, c.y);
@@ -340,7 +335,13 @@ function render(time){
 	score.draw(ctxScore);
 }
 
-
+function setFullscreen(){
+	let canvas = document.getElementById("MyCanvas");
+	if (canvas.requestFullscreen && document.fullscreenElement != canvas){
+		canvas.requestFullscreen();
+		screen.orientation.lock("landscape").catch((error) => {});			
+	}
+}
 
 </script>
 </head>
@@ -350,6 +351,9 @@ function render(time){
 </div>
 <br/>
 <a href="#" onclick="levelId = (levelId + 1) % levels.length; level = levels[levelId];">skip level</a>
+<br/><br/><br/>
+<a href="#" onclick="setFullscreen();">Fullscreen (Android)</a>
+
 <!--img src = "https://lefterise.github.io/Bow-and-Arrow/sprites/screenshot.png" hidden></img-->	
 </body>
 </html>

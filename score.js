@@ -1,3 +1,5 @@
+const arrowsPerLevel = [15,12];
+
 class Score{
 	constructor(){
 		this.score = 0;
