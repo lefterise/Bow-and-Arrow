@@ -43,7 +43,7 @@ class GoldenRingLevel extends TargetLevel{
         super(targetSprite, archer, arrowManager);
         this.target.bullseyeRadius = 6;
         this.target.requiredColor = '#FFCC00';
-        this.goldenRing = new GoldenRing(350,50 + 280, -0.1, ringSprite);
+        this.goldenRing = new GoldenRing(300,50 + 280, -0.1, ringSprite);
     }
 
     update(time){

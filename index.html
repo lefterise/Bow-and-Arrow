@@ -343,6 +343,15 @@ function setFullscreen(){
 	}
 }
 
+function skipLevel(){
+	levelId = levelId + 1;
+	if (levelId == levels.length){
+		initLevels();
+		levelId = 0;
+	}
+	level = levels[levelId];
+}
+
 </script>
 </head>
 <body>
@@ -350,7 +359,7 @@ function setFullscreen(){
 <canvas id="MyCanvas" width="640" height="480" style="border:1px solid #000000; background-color:#000000;" class="no_selection"></canvas><br/>
 </div>
 <br/>
-<a href="#" onclick="levelId = (levelId + 1) % levels.length; level = levels[levelId];">skip level</a>
+<a href="#" onclick="skipLevel()">skip level</a>
 <br/><br/><br/>
 <a href="#" onclick="setFullscreen();">Fullscreen (Android)</a>
 
